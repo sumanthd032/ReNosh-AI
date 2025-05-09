@@ -5,17 +5,28 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:renosh_app/firebase_options.dart';
 import 'package:renosh_app/screens/signup_screen.dart';
 import 'package:renosh_app/screens/login_screen.dart';
+import 'package:renosh_app/screens/establishment_dashboard.dart';
+import 'package:renosh_app/screens/acceptor_dashboard.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
+  Future<Widget> _getHomeScreen() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const SignupScreen();
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    if (!doc.exists) return const SignupScreen();
+    final role = doc.data()!['role'];
+    return role == 'Food Establishment' ? const EstablishmentDashboard() : const AcceptorDashboard();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,11 +79,23 @@ class MyApp extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
       ),
-      home: const SignupScreen(),
+      home: FutureBuilder<Widget>(
+        future: _getHomeScreen(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              backgroundColor: Color(0xFF1A3C34),
+              body: Center(child: CircularProgressIndicator(color: Color(0xFF39FF14))),
+            );
+          }
+          return snapshot.data ?? const SignupScreen();
+        },
+      ),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignupScreen(),
-        '/dashboard': (context) => const Placeholder(),
+        '/establishment_dashboard': (context) => const EstablishmentDashboard(),
+        '/acceptor_dashboard': (context) => const AcceptorDashboard(),
       },
     );
   }
