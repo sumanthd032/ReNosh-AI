@@ -25,6 +25,9 @@ dependencies:
   fl_chart: ^1.0.0
   carousel_slider: ^5.0.0
   flutter_staggered_animations: ^1.1.1
+  url_launcher: ^6.3.1
+  image_picker: ^1.1.2
+  firebase_storage: ^12.4.5
 
 dev_dependencies:
   flutter_test:
