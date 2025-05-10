@@ -5,8 +5,8 @@ import 'package:flutter/gestures.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:email_validator/email_validator.dart';
-import 'package:renosh_app/screens/establishment_dashboard.dart';
-import 'signup_screen.dart'; // Import SignupScreen
+import 'package:renosh_app/main.dart';
+import 'signup_screen.dart'; 
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -86,11 +86,10 @@ class _LoginScreenState extends State<LoginScreen>
             password: _passwordController.text,
           );
 
-      DocumentSnapshot userDoc =
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(userCredential.user!.uid)
-              .get();
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .get();
 
       if (!userDoc.exists) {
         _showErrorSnackBar('User data not found. Please sign up.');
@@ -115,10 +114,11 @@ class _LoginScreenState extends State<LoginScreen>
       );
 
       if (mounted) {
-        // Replaced Navigator.pushReplacementNamed with Navigator.pushReplacement
-        Navigator.pushReplacement(
+        // Navigate to root (MyApp) to let main.dart handle role-based routing
+        Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => EstablishmentDashboard()),
+          MaterialPageRoute(builder: (context) => const MyApp()),
+          (route) => false, // Clear navigation stack
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -356,18 +356,17 @@ class _LoginScreenState extends State<LoginScreen>
                                       shadowColor: Colors.transparent,
                                       splashFactory: InkRipple.splashFactory,
                                     ),
-                                    child:
-                                        _isLoading
-                                            ? const CircularProgressIndicator(
-                                              color: Color(0xFF1A3C34),
-                                            )
-                                            : Text(
-                                              'Log In',
-                                              style: GoogleFonts.inter(
-                                                fontWeight: FontWeight.w700,
-                                                fontSize: 16,
-                                              ),
+                                    child: _isLoading
+                                        ? const CircularProgressIndicator(
+                                            color: Color(0xFF1A3C34),
+                                          )
+                                        : Text(
+                                            'Log In',
+                                            style: GoogleFonts.inter(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 16,
                                             ),
+                                          ),
                                   ),
                                 ),
                               ],
@@ -391,18 +390,15 @@ class _LoginScreenState extends State<LoginScreen>
                                 color: const Color(0xFF39FF14),
                                 decoration: TextDecoration.underline,
                               ),
-                              recognizer:
-                                  TapGestureRecognizer()
-                                    ..onTap = () {
-                                      // Replaced Navigator.pushNamed with Navigator.push
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (context) => const SignupScreen(),
-                                        ),
-                                      );
-                                    },
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const SignupScreen(),
+                                    ),
+                                  );
+                                },
                             ),
                           ],
                         ),
