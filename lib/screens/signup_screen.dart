@@ -15,7 +15,8 @@ class SignupScreen extends StatefulWidget {
   State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderStateMixin {
+class _SignupScreenState extends State<SignupScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -73,9 +74,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
         backgroundColor: const Color(0xFFFF4A4A), // Coral Red
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -85,26 +84,36 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
     final form = _formKey.currentState;
     if (form == null || !form.validate()) {
       if (_nameController.text.trim().isEmpty) {
-        _showErrorSnackBar(_selectedRole == 'Food Establishment'
-            ? 'Establishment name is required'
-            : 'Organization name is required');
-      } else if (_selectedRole == 'Food Establishment' && _establishmentType == null ||
+        _showErrorSnackBar(
+          _selectedRole == 'Food Establishment'
+              ? 'Establishment name is required'
+              : 'Organization name is required',
+        );
+      } else if (_selectedRole == 'Food Establishment' &&
+              _establishmentType == null ||
           _selectedRole == 'Food Acceptor' && _orgType == null) {
         _showErrorSnackBar('Please select a type');
-      } else if (!_emailController.text.contains('@') || !EmailValidator.validate(_emailController.text)) {
+      } else if (!_emailController.text.contains('@') ||
+          !EmailValidator.validate(_emailController.text)) {
         _showErrorSnackBar('Enter a valid email address');
       } else if (_passwordController.text.length < 8) {
         _showErrorSnackBar('Password must be at least 8 characters');
       } else if (!_passwordController.text.contains(RegExp(r'[0-9]')) ||
-          !_passwordController.text.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
-        _showErrorSnackBar('Password must include a number and special character');
+          !_passwordController.text.contains(
+            RegExp(r'[!@#$%^&*(),.?":{}|<>]'),
+          )) {
+        _showErrorSnackBar(
+          'Password must include a number and special character',
+        );
       } else if (_confirmPasswordController.text != _passwordController.text) {
         _showErrorSnackBar('Passwords do not match');
       } else if (_addressController.text.trim().isEmpty) {
         _showErrorSnackBar('Address is required');
       } else if (_contactController.text.trim().isEmpty) {
         _showErrorSnackBar('Contact number is required');
-      } else if (!RegExp(r'^\d{10}$').hasMatch(_contactController.text.trim())) {
+      } else if (!RegExp(
+        r'^\d{10}$',
+      ).hasMatch(_contactController.text.trim())) {
         _showErrorSnackBar('Enter a valid 10-digit phone number');
       }
       return;
@@ -113,10 +122,11 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
     setState(() => _isLoading = true);
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
 
       final userData = {
         'role': _selectedRole,
@@ -196,10 +206,17 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
         ],
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          _buildToggleButton('Food Establishment', Icons.restaurant),
-          _buildToggleButton('Food Acceptor', Icons.volunteer_activism),
+          Expanded(
+            child: _buildToggleButton('Food Establishment', Icons.restaurant),
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            child: _buildToggleButton(
+              'Food Acceptor',
+              Icons.volunteer_activism,
+            ),
+          ),
         ],
       ),
     );
@@ -220,34 +237,41 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF39FF14) : const Color(0xFF2D2D2D),
           borderRadius: BorderRadius.circular(24),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF39FF14).withOpacity(0.5),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
+          boxShadow:
+              isSelected
+                  ? [
+                    BoxShadow(
+                      color: const Color(0xFF39FF14).withOpacity(0.5),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                  : [],
         ),
         child: Row(
           children: [
             Icon(
               icon,
-              size: 24,
-              color: isSelected ? const Color(0xFF1A3C34) : const Color(0xFFF9F7F3),
+              size: 20,
+              color:
+                  isSelected
+                      ? const Color(0xFF1A3C34)
+                      : const Color(0xFFF9F7F3),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             Text(
               role,
               style: GoogleFonts.inter(
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: isSelected ? const Color(0xFF1A3C34) : const Color(0xFFF9F7F3),
+                fontSize: 11,
+                color:
+                    isSelected
+                        ? const Color(0xFF1A3C34)
+                        : const Color(0xFFF9F7F3),
               ),
             ),
           ],
@@ -356,16 +380,18 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                     color: const Color(0xFFF9F7F3),
                                   ),
                                   decoration: InputDecoration(
-                                    labelText: _selectedRole == 'Food Establishment'
-                                        ? 'Establishment Name'
-                                        : 'Organization Name',
+                                    labelText:
+                                        _selectedRole == 'Food Establishment'
+                                            ? 'Establishment Name'
+                                            : 'Organization Name',
                                     labelStyle: GoogleFonts.inter(
                                       fontSize: 14,
                                       color: const Color(0xFFB0B0B0),
                                     ),
-                                    hintText: _selectedRole == 'Food Establishment'
-                                        ? 'e.g., Green Leaf Restaurant'
-                                        : 'e.g., Hope NGO',
+                                    hintText:
+                                        _selectedRole == 'Food Establishment'
+                                            ? 'e.g., Green Leaf Restaurant'
+                                            : 'e.g., Hope NGO',
                                     hintStyle: GoogleFonts.inter(
                                       fontSize: 14,
                                       color: const Color(0xFFB0B0B0),
@@ -397,15 +423,19 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                 ),
                                 const SizedBox(height: 16),
                                 DropdownButtonFormField<String>(
-                                  value: _selectedRole == 'Food Establishment' ? _establishmentType : _orgType,
+                                  value:
+                                      _selectedRole == 'Food Establishment'
+                                          ? _establishmentType
+                                          : _orgType,
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     color: const Color(0xFFF9F7F3),
                                   ),
                                   decoration: InputDecoration(
-                                    labelText: _selectedRole == 'Food Establishment'
-                                        ? 'Establishment Type'
-                                        : 'Organization Type',
+                                    labelText:
+                                        _selectedRole == 'Food Establishment'
+                                            ? 'Establishment Type'
+                                            : 'Organization Type',
                                     labelStyle: GoogleFonts.inter(
                                       fontSize: 14,
                                       color: const Color(0xFFB0B0B0),
@@ -429,23 +459,39 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                     ),
                                   ),
                                   dropdownColor: const Color(0xFF2D2D2D),
-                                  items: (_selectedRole == 'Food Establishment'
-                                          ? ['Restaurant', 'Function Hall', 'Paying Guest (PG)', 'Other']
-                                          : ['NGO', 'Food Bank', 'Community Organization', 'Other'])
-                                      .map((type) => DropdownMenuItem(
-                                            value: type,
-                                            child: Text(
-                                              type,
-                                              style: GoogleFonts.inter(
-                                                fontSize: 16,
-                                                color: const Color(0xFFF9F7F3),
+                                  items:
+                                      (_selectedRole == 'Food Establishment'
+                                              ? [
+                                                'Restaurant',
+                                                'Function Hall',
+                                                'Paying Guest (PG)',
+                                                'Other',
+                                              ]
+                                              : [
+                                                'NGO',
+                                                'Food Bank',
+                                                'Community Organization',
+                                                'Other',
+                                              ])
+                                          .map(
+                                            (type) => DropdownMenuItem(
+                                              value: type,
+                                              child: Text(
+                                                type,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 16,
+                                                  color: const Color(
+                                                    0xFFF9F7F3,
+                                                  ),
+                                                ),
                                               ),
                                             ),
-                                          ))
-                                      .toList(),
+                                          )
+                                          .toList(),
                                   onChanged: (value) {
                                     setState(() {
-                                      if (_selectedRole == 'Food Establishment') {
+                                      if (_selectedRole ==
+                                          'Food Establishment') {
                                         _establishmentType = value;
                                       } else {
                                         _orgType = value;
@@ -497,7 +543,8 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                     ),
                                   ),
                                   validator: (value) {
-                                    if (value == null || !EmailValidator.validate(value)) {
+                                    if (value == null ||
+                                        !EmailValidator.validate(value)) {
                                       return 'Enter a valid email address';
                                     }
                                     return null;
@@ -528,7 +575,9 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                     ),
                                     suffixIcon: IconButton(
                                       icon: Icon(
-                                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                        _obscurePassword
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
                                         color: const Color(0xFFB0B0B0),
                                       ),
                                       onPressed: () {
@@ -556,7 +605,9 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                       return 'Password must be at least 8 characters';
                                     }
                                     if (!value.contains(RegExp(r'[0-9]')) ||
-                                        !value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+                                        !value.contains(
+                                          RegExp(r'[!@#$%^&*(),.?":{}|<>]'),
+                                        )) {
                                       return 'Include a number and special character';
                                     }
                                     return null;
@@ -564,10 +615,17 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                 ),
                                 const SizedBox(height: 8),
                                 LinearProgressIndicator(
-                                  value: _getPasswordStrength(_passwordController.text),
-                                  backgroundColor: const Color(0xFF2D2D2D).withOpacity(0.5),
+                                  value: _getPasswordStrength(
+                                    _passwordController.text,
+                                  ),
+                                  backgroundColor: const Color(
+                                    0xFF2D2D2D,
+                                  ).withOpacity(0.5),
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    _getPasswordStrength(_passwordController.text) < 0.5
+                                    _getPasswordStrength(
+                                              _passwordController.text,
+                                            ) <
+                                            0.5
                                         ? const Color(0xFFFF4A4A)
                                         : const Color(0xFF39FF14),
                                   ),
@@ -599,12 +657,15 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                     ),
                                     suffixIcon: IconButton(
                                       icon: Icon(
-                                        _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                                        _obscureConfirmPassword
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
                                         color: const Color(0xFFB0B0B0),
                                       ),
                                       onPressed: () {
                                         setState(() {
-                                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                                          _obscureConfirmPassword =
+                                              !_obscureConfirmPassword;
                                         });
                                       },
                                     ),
@@ -623,7 +684,8 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                     ),
                                   ),
                                   validator: (value) {
-                                    if (value == null || value != _passwordController.text) {
+                                    if (value == null ||
+                                        value != _passwordController.text) {
                                       return 'Passwords do not match';
                                     }
                                     return null;
@@ -705,7 +767,9 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                         fontSize: 14,
                                         color: const Color(0xFFF9F7F3),
                                       ),
-                                      dialogBackgroundColor: const Color(0xFF2D2D2D),
+                                      dialogBackgroundColor: const Color(
+                                        0xFF2D2D2D,
+                                      ),
                                     ),
                                     filled: true,
                                     fillColor: const Color(0xFF2D2D2D),
@@ -725,7 +789,9 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                     if (value == null || value.trim().isEmpty) {
                                       return 'Contact number is required';
                                     }
-                                    if (!RegExp(r'^\d{10}$').hasMatch(value.trim())) {
+                                    if (!RegExp(
+                                      r'^\d{10}$',
+                                    ).hasMatch(value.trim())) {
                                       return 'Enter a valid 10-digit number';
                                     }
                                     return null;
@@ -747,17 +813,18 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                       shadowColor: Colors.transparent,
                                       splashFactory: InkRipple.splashFactory,
                                     ),
-                                    child: _isLoading
-                                        ? const CircularProgressIndicator(
-                                            color: Color(0xFF1A3C34),
-                                          )
-                                        : Text(
-                                            'Sign Up',
-                                            style: GoogleFonts.inter(
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 16,
+                                    child:
+                                        _isLoading
+                                            ? const CircularProgressIndicator(
+                                              color: Color(0xFF1A3C34),
+                                            )
+                                            : Text(
+                                              'Sign Up',
+                                              style: GoogleFonts.inter(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 16,
+                                              ),
                                             ),
-                                          ),
                                   ),
                                 ),
                               ],
@@ -781,8 +848,13 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                 color: const Color(0xFF39FF14),
                                 decoration: TextDecoration.underline,
                               ),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () => Navigator.pushNamed(context, '/login'),
+                              recognizer:
+                                  TapGestureRecognizer()
+                                    ..onTap =
+                                        () => Navigator.pushNamed(
+                                          context,
+                                          '/login',
+                                        ),
                             ),
                           ],
                         ),
