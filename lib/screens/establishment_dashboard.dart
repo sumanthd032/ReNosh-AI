@@ -22,10 +22,6 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
   String? _establishmentName;
   bool _isLoading = true;
   String _greeting = '';
-  final _foodItemController = TextEditingController();
-  final _quantityMadeController = TextEditingController();
-  final _quantitySurplusController = TextEditingController();
-  final _quantitySoldController = TextEditingController();
 
   @override
   void initState() {
@@ -49,10 +45,6 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
   @override
   void dispose() {
     _animController.dispose();
-    _foodItemController.dispose();
-    _quantityMadeController.dispose();
-    _quantitySurplusController.dispose();
-    _quantitySoldController.dispose();
     super.dispose();
   }
 
@@ -131,39 +123,6 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
-  }
-
-  Future<void> _addFoodTracking() async {
-    if (_foodItemController.text.isEmpty ||
-        _quantityMadeController.text.isEmpty ||
-        _quantitySurplusController.text.isEmpty ||
-        _quantitySoldController.text.isEmpty) {
-      _showErrorSnackBar('Please fill in all fields.');
-      return;
-    }
-    setState(() => _isLoading = true);
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      await FirebaseFirestore.instance.collection('food_tracking').add({
-        'establishmentId': user!.uid,
-        'day': DateFormat('EEEE').format(DateTime.now()),
-        'date': DateFormat('yyyy-MM-dd').format(DateTime.now()),
-        'item_name': _foodItemController.text,
-        'quantity_made': int.parse(_quantityMadeController.text),
-        'quantity_surplus': int.parse(_quantitySurplusController.text),
-        'quantity_sold': int.parse(_quantitySoldController.text),
-        'timestamp': Timestamp.now(),
-      });
-      _foodItemController.clear();
-      _quantityMadeController.clear();
-      _quantitySurplusController.clear();
-      _quantitySoldController.clear();
-      _showSuccessSnackBar('Food tracking added successfully.');
-    } catch (e) {
-      _showErrorSnackBar('Failed to add food tracking.');
-    } finally {
-      setState(() => _isLoading = false);
-    }
   }
 
   Future<void> _donateItem(String item, int quantity) async {
@@ -646,210 +605,6 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
     );
   }
 
-  Widget _buildFoodTrackingSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF2D2D2D),
-            const Color(0xFF1A3C34).withOpacity(0.9),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(4, 4),
-          ),
-          BoxShadow(
-            color: const Color(0xFFF9F7F3).withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(-4, -4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Track Food Items',
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFFF9F7F3),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _foodItemController,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: const Color(0xFFF9F7F3),
-            ),
-            decoration: InputDecoration(
-              labelText: 'Food Item Name',
-              labelStyle: GoogleFonts.inter(
-                fontSize: 12,
-                color: const Color(0xFFB0B0B0),
-              ),
-              prefixIcon: const Icon(Icons.food_bank, color: Color(0xFF39FF14)),
-              filled: true,
-              fillColor: Colors.transparent,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  color: Color(0xFF39FF14),
-                  width: 2,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _quantityMadeController,
-                  keyboardType: TextInputType.number,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: const Color(0xFFF9F7F3),
-                  ),
-                  decoration: InputDecoration(
-                    labelText: 'Quantity Made',
-                    labelStyle: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: const Color(0xFFB0B0B0),
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.production_quantity_limits,
-                      color: Color(0xFF39FF14),
-                    ),
-                    filled: true,
-                    fillColor: Colors.transparent,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF39FF14),
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: TextField(
-                  controller: _quantitySurplusController,
-                  keyboardType: TextInputType.number,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: const Color(0xFFF9F7F3),
-                  ),
-                  decoration: InputDecoration(
-                    labelText: 'Quantity Surplus',
-                    labelStyle: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: const Color(0xFFB0B0B0),
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.add_chart,
-                      color: Color(0xFF39FF14),
-                    ),
-                    filled: true,
-                    fillColor: Colors.transparent,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF39FF14),
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _quantitySoldController,
-            keyboardType: TextInputType.number,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: const Color(0xFFF9F7F3),
-            ),
-            decoration: InputDecoration(
-              labelText: 'Quantity Sold',
-              labelStyle: GoogleFonts.inter(
-                fontSize: 12,
-                color: const Color(0xFFB0B0B0),
-              ),
-              prefixIcon: const Icon(Icons.sell, color: Color(0xFF39FF14)),
-              filled: true,
-              fillColor: Colors.transparent,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  color: Color(0xFF39FF14),
-                  width: 2,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed:
-                  _isLoading
-                      ? null
-                      : () {
-                        HapticFeedback.lightImpact();
-                        _addFoodTracking();
-                      },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF39FF14),
-                foregroundColor: const Color(0xFF1A3C34),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                'Add Tracking',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBottomNavBar() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1016,8 +771,6 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
                           _buildSustainabilityCharts(),
                           const SizedBox(height: 24),
                           _buildSurplusItems(),
-                          const SizedBox(height: 24),
-                          _buildFoodTrackingSection(),
                         ],
                       ),
                     ),
