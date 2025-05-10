@@ -373,7 +373,7 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
             ),
           ),
           const SizedBox(height: 8),
-          SizedBox(height: 110, child: chart),
+          SizedBox(height: 105, child: chart),
         ],
       ),
     );
