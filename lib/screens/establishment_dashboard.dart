@@ -6,6 +6,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:intl/intl.dart';
+import 'package:renosh_app/screens/auth_screen/login_screen.dart';
+import 'package:renosh_app/screens/food_track_screen.dart';
+import 'package:renosh_app/screens/history_screen.dart';
+import 'package:renosh_app/screens/profile_screen.dart';
+import 'package:renosh_app/screens/surplus_details_screen.dart';
 
 class EstablishmentDashboard extends StatefulWidget {
   const EstablishmentDashboard({super.key});
@@ -76,11 +81,18 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
         } else {
           _showErrorSnackBar('Invalid role or user data.');
           await FirebaseAuth.instance.signOut();
-          if (mounted) Navigator.pushReplacementNamed(context, '/login');
+          if (mounted)
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+            );
         }
+      } else {
+        _showErrorSnackBar('User not authenticated.');
+        setState(() => _isLoading = false);
       }
     } catch (e) {
-      _showErrorSnackBar('Failed to load user data.');
+      _showErrorSnackBar('Failed to load user data: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -123,61 +135,6 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
-  }
-
-  Future<void> _donateItem(String item, int quantity) async {
-    setState(() => _isLoading = true);
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      await FirebaseFirestore.instance.collection('donations').add({
-        'establishmentId': user!.uid,
-        'quantity': '$quantity meals',
-        'pickupTime': DateFormat(
-          'HH:mm',
-        ).format(DateTime.now().add(const Duration(hours: 2))),
-        'status': 'Available',
-        'createdAt': Timestamp.now(),
-      });
-      await FirebaseFirestore.instance.collection('history').add({
-        'establishmentId': user.uid,
-        'action': 'Donate',
-        'item': item,
-        'quantity': quantity,
-        'timestamp': Timestamp.now(),
-      });
-      _showSuccessSnackBar('Donation created successfully.');
-    } catch (e) {
-      _showErrorSnackBar('Failed to create donation.');
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _sellItem(String item, int quantity) async {
-    setState(() => _isLoading = true);
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      await FirebaseFirestore.instance.collection('sales').add({
-        'establishmentId': user!.uid,
-        'item': item,
-        'quantity': quantity,
-        'price': 0.0, // Placeholder
-        'status': 'Sold',
-        'createdAt': Timestamp.now(),
-      });
-      await FirebaseFirestore.instance.collection('history').add({
-        'establishmentId': user.uid,
-        'action': 'Sell',
-        'item': item,
-        'quantity': quantity,
-        'timestamp': Timestamp.now(),
-      });
-      _showSuccessSnackBar('Item marked for sale.');
-    } catch (e) {
-      _showErrorSnackBar('Failed to mark item for sale.');
-    } finally {
-      setState(() => _isLoading = false);
-    }
   }
 
   Widget _buildAIInsightsCard() {
@@ -416,15 +373,44 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
             ),
           ),
           const SizedBox(height: 8),
-          SizedBox(height: 120, child: chart),
+          SizedBox(height: 110, child: chart),
         ],
       ),
     );
   }
 
   Widget _buildSurplusItems() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2D2D2D).withOpacity(0.7),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline, color: Color(0xFFB0B0B0), size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Please log in to view surplus items.',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFFB0B0B0),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -459,141 +445,181 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
               color: const Color(0xFFF9F7F3),
             ),
           ),
-          const SizedBox(height: 16),
+          // Reduced the SizedBox height here, or you can remove it entirely if needed.
+          const SizedBox(height: 4), // Set this to the smallest value
           StreamBuilder<QuerySnapshot>(
             stream:
                 FirebaseFirestore.instance
                     .collection('food_tracking')
-                    .where(
-                      'establishmentId',
-                      isEqualTo: FirebaseAuth.instance.currentUser?.uid,
-                    )
+                    .where('establishmentId', isEqualTo: user.uid)
                     .where('quantity_surplus', isGreaterThan: 0)
                     .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF39FF14)),
-                );
-              }
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return Text(
-                  'No surplus items.',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: const Color(0xFFB0B0B0),
+                  child: SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF39FF14),
+                      strokeWidth: 2.5,
+                    ),
                   ),
                 );
               }
+              if (snapshot.hasError) {
+                debugPrint('Surplus query error: ${snapshot.error}');
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF4A4A).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: const Color(0xFFFF4A4A).withOpacity(0.4),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: Color(0xFFFF4A4A),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Failed to load surplus items. Check logs for details.',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFFF9F7F3),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                debugPrint('No surplus items found for user: ${user.uid}');
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2D2D2D).withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        color: Color(0xFFB0B0B0),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'No surplus items found. Try adding some in Food Track.',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFFB0B0B0),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              debugPrint('Found ${snapshot.data!.docs.length} surplus items');
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: snapshot.data!.docs.length,
                 itemBuilder: (context, index) {
                   final doc = snapshot.data!.docs[index];
-                  final item = doc['item_name'];
-                  final quantity = doc['quantity_surplus'];
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2D2D2D),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
+                  final item = doc['item_name'] as String;
+                  final quantity = doc['quantity_surplus'] as int;
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => SurplusDetailsScreen(
+                                itemName: item,
+                                quantity: quantity,
+                                docId: doc.id,
+                              ), // Replace with your new screen
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item,
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFFF9F7F3),
+                      );
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeOut,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2D2D2D).withOpacity(0.85),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
                           ),
-                        ),
-                        Text(
-                          'Surplus: $quantity',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: const Color(0xFFB0B0B0),
+                          BoxShadow(
+                            color: const Color(0xFF39FF14).withOpacity(0.05),
+                            blurRadius: 8,
+                            spreadRadius: 1,
                           ),
+                        ],
+                        border: Border.all(
+                          color: const Color(0xFF39FF14).withOpacity(0.1),
                         ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            ElevatedButton(
-                              onPressed: () {
-                                HapticFeedback.lightImpact();
-                                _donateItem(item, quantity);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF39FF14),
-                                foregroundColor: const Color(0xFF1A3C34),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text(
-                                'Donate',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF39FF14).withOpacity(0.15),
+                              shape: BoxShape.circle,
                             ),
-                            ElevatedButton(
-                              onPressed: () {
-                                HapticFeedback.lightImpact();
-                                _sellItem(item, quantity);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFF9F7F3),
-                                foregroundColor: const Color(0xFF1A3C34),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text(
-                                'Sell',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                            child: const Icon(
+                              Icons.restaurant_menu,
+                              color: Color(0xFF39FF14),
+                              size: 20,
                             ),
-                            ElevatedButton(
-                              onPressed: () {
-                                HapticFeedback.lightImpact();
-                                _showSuccessSnackBar(
-                                  'Other actions coming soon!',
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFB0B0B0),
-                                foregroundColor: const Color(0xFF1A3C34),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFFF9F7F3),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                              child: Text(
-                                'Other',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
+                                const SizedBox(height: 3),
+                                Text(
+                                  'Surplus: $quantity ${quantity == 1 ? 'item' : 'items'}',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w400,
+                                    color: const Color(0xFFB0B0B0),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -621,24 +647,41 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem('Home', Icons.home, true, () {}),
+          _buildNavItem(
+            'Home',
+            Icons.home,
+            true,
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => EstablishmentDashboard()),
+            ),
+          ),
           _buildNavItem(
             'Food Track',
             Icons.inventory,
             false,
-            () => Navigator.pushNamed(context, '/food_track'),
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => FoodTrackScreen()),
+            ),
           ),
           _buildNavItem(
             'History',
             Icons.history,
             false,
-            () => Navigator.pushNamed(context, '/history'),
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const HistoryScreen()),
+            ),
           ),
           _buildNavItem(
             'Profile',
             Icons.person,
             false,
-            () => Navigator.pushNamed(context, '/profile'),
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ProfileScreen()),
+            ),
           ),
         ],
       ),
@@ -735,14 +778,19 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 32),
-                          ScaleTransition(
-                            scale: _scaleAnimation,
-                            child: Image.asset(
-                              'assets/logo.jpg',
-                              width: 80,
-                              height: 80,
-                              semanticLabel: 'ReNosh Logo',
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              ScaleTransition(
+                                scale: _scaleAnimation,
+                                child: Image.asset(
+                                  'assets/logo.jpg',
+                                  width: 80,
+                                  height: 80,
+                                  semanticLabel: 'ReNosh Logo',
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 16),
                           FadeTransition(

@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:country_code_picker/country_code_picker.dart';
+import 'package:renosh_app/screens/auth_screen/login_screen.dart';
+import 'package:renosh_app/screens/establishment_dashboard.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -148,7 +150,13 @@ class _SignupScreenState extends State<SignupScreen>
           .set(userData);
 
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        // Changed Navigator.push to Navigator.pushReplacement
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const EstablishmentDashboard(),
+          ),
+        );
       }
     } on FirebaseAuthException catch (e) {
       // Handle specific Firebase errors with SnackBar
@@ -210,7 +218,7 @@ class _SignupScreenState extends State<SignupScreen>
           Expanded(
             child: _buildToggleButton('Food Establishment', Icons.restaurant),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           Expanded(
             child: _buildToggleButton(
               'Food Acceptor',
@@ -851,9 +859,13 @@ class _SignupScreenState extends State<SignupScreen>
                               recognizer:
                                   TapGestureRecognizer()
                                     ..onTap =
-                                        () => Navigator.pushNamed(
+                                        () => Navigator.push(
                                           context,
-                                          '/login',
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) =>
+                                                    const LoginScreen(),
+                                          ),
                                         ),
                             ),
                           ],

@@ -5,6 +5,8 @@ import 'package:flutter/gestures.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:email_validator/email_validator.dart';
+import 'package:renosh_app/screens/establishment_dashboard.dart';
+import 'signup_screen.dart'; // Import SignupScreen
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,7 +15,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -44,32 +47,29 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     super.dispose();
   }
 
-  // Helper function to show SnackBar with consistent styling
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           message,
           style: GoogleFonts.inter(
-            color: const Color(0xFFF9F7F3), // Soft Cream
+            color: const Color(0xFFF9F7F3),
             fontSize: 14,
           ),
         ),
-        backgroundColor: const Color(0xFFFF4A4A), // Coral Red
+        backgroundColor: const Color(0xFFFF4A4A),
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
 
   void _submitForm() async {
-    // Validate form and show SnackBar for the first error
     final form = _formKey.currentState;
     if (form == null || !form.validate()) {
-      if (!_emailController.text.contains('@') || !EmailValidator.validate(_emailController.text)) {
+      if (!_emailController.text.contains('@') ||
+          !EmailValidator.validate(_emailController.text)) {
         _showErrorSnackBar('Enter a valid email address');
       } else if (_passwordController.text.isEmpty) {
         _showErrorSnackBar('Password is required');
@@ -80,17 +80,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     setState(() => _isLoading = true);
 
     try {
-      // Sign in with Firebase Authentication
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
 
-      // Fetch user role from Firestore
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .get();
+      DocumentSnapshot userDoc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userCredential.user!.uid)
+              .get();
 
       if (!userDoc.exists) {
         _showErrorSnackBar('User data not found. Please sign up.');
@@ -98,11 +98,30 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         return;
       }
 
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Login successful!',
+            style: GoogleFonts.inter(
+              color: const Color(0xFF1A3C34),
+              fontSize: 14,
+            ),
+          ),
+          backgroundColor: const Color(0xFF39FF14),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        // Replaced Navigator.pushReplacementNamed with Navigator.pushReplacement
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => EstablishmentDashboard()),
+        );
       }
     } on FirebaseAuthException catch (e) {
-      // Handle specific Firebase errors with SnackBar
       String errorMessage;
       switch (e.code) {
         case 'user-not-found':
@@ -134,18 +153,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A3C34), // Deep Forest
+      backgroundColor: const Color(0xFF1A3C34),
       body: Stack(
         children: [
-          // Animated Gradient Background
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF1A3C34), // Deep Forest
-                  const Color(0xFF2D2D2D).withOpacity(0.8), // Charcoal Gray
+                  const Color(0xFF1A3C34),
+                  const Color(0xFF2D2D2D).withOpacity(0.8),
                 ],
               ),
             ),
@@ -176,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           style: GoogleFonts.inter(
                             fontSize: 36,
                             fontWeight: FontWeight.w800,
-                            color: const Color(0xFFF9F7F3), // Soft Cream
+                            color: const Color(0xFFF9F7F3),
                           ),
                         ),
                       ),
@@ -188,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             textStyle: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.w400,
-                              color: const Color(0xFFB0B0B0), // Gray
+                              color: const Color(0xFFB0B0B0),
                             ),
                             textAlign: TextAlign.center,
                             speed: const Duration(milliseconds: 50),
@@ -197,14 +215,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         totalRepeatCount: 1,
                       ),
                       const SizedBox(height: 32),
-                      // Glassmorphism Form Card
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 400),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2D2D2D).withOpacity(0.85), // Charcoal Gray
+                          color: const Color(0xFF2D2D2D).withOpacity(0.85),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: const Color(0xFFF9F7F3).withOpacity(0.1), // Soft Cream
+                            color: const Color(0xFFF9F7F3).withOpacity(0.1),
                             width: 1,
                           ),
                           boxShadow: [
@@ -227,13 +244,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   keyboardType: TextInputType.emailAddress,
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
-                                    color: const Color(0xFFF9F7F3), // Soft Cream
+                                    color: const Color(0xFFF9F7F3),
                                   ),
                                   decoration: InputDecoration(
                                     labelText: 'Email Address',
                                     labelStyle: GoogleFonts.inter(
                                       fontSize: 14,
-                                      color: const Color(0xFFB0B0B0), // Gray
+                                      color: const Color(0xFFB0B0B0),
                                     ),
                                     hintText: 'e.g., user@example.com',
                                     hintStyle: GoogleFonts.inter(
@@ -242,10 +259,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     ),
                                     prefixIcon: const Icon(
                                       Icons.email,
-                                      color: Color(0xFF39FF14), // Vibrant Lime
+                                      color: Color(0xFF39FF14),
                                     ),
                                     filled: true,
-                                    fillColor: const Color(0xFF2D2D2D), // Charcoal Gray
+                                    fillColor: const Color(0xFF2D2D2D),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide: BorderSide.none,
@@ -253,13 +270,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide: const BorderSide(
-                                        color: Color(0xFF39FF14), // Vibrant Lime
+                                        color: Color(0xFF39FF14),
                                         width: 2,
                                       ),
                                     ),
                                   ),
                                   validator: (value) {
-                                    if (value == null || !EmailValidator.validate(value)) {
+                                    if (value == null ||
+                                        !EmailValidator.validate(value)) {
                                       return 'Enter a valid email address';
                                     }
                                     return null;
@@ -271,13 +289,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   obscureText: _obscurePassword,
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
-                                    color: const Color(0xFFF9F7F3), // Soft Cream
+                                    color: const Color(0xFFF9F7F3),
                                   ),
                                   decoration: InputDecoration(
                                     labelText: 'Password',
                                     labelStyle: GoogleFonts.inter(
                                       fontSize: 14,
-                                      color: const Color(0xFFB0B0B0), // Gray
+                                      color: const Color(0xFFB0B0B0),
                                     ),
                                     hintText: 'Enter your password',
                                     hintStyle: GoogleFonts.inter(
@@ -286,12 +304,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     ),
                                     prefixIcon: const Icon(
                                       Icons.lock,
-                                      color: Color(0xFF39FF14), // Vibrant Lime
+                                      color: Color(0xFF39FF14),
                                     ),
                                     suffixIcon: IconButton(
                                       icon: Icon(
-                                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                        color: const Color(0xFFB0B0B0), // Gray
+                                        _obscurePassword
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                        color: const Color(0xFFB0B0B0),
                                       ),
                                       onPressed: () {
                                         setState(() {
@@ -300,7 +320,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                       },
                                     ),
                                     filled: true,
-                                    fillColor: const Color(0xFF2D2D2D), // Charcoal Gray
+                                    fillColor: const Color(0xFF2D2D2D),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide: BorderSide.none,
@@ -308,7 +328,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide: const BorderSide(
-                                        color: Color(0xFF39FF14), // Vibrant Lime
+                                        color: Color(0xFF39FF14),
                                         width: 2,
                                       ),
                                     ),
@@ -327,8 +347,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   child: ElevatedButton(
                                     onPressed: _isLoading ? null : _submitForm,
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF39FF14), // Vibrant Lime
-                                      foregroundColor: const Color(0xFF1A3C34), // Deep Forest
+                                      backgroundColor: const Color(0xFF39FF14),
+                                      foregroundColor: const Color(0xFF1A3C34),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
@@ -336,17 +356,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                       shadowColor: Colors.transparent,
                                       splashFactory: InkRipple.splashFactory,
                                     ),
-                                    child: _isLoading
-                                        ? const CircularProgressIndicator(
-                                            color: Color(0xFF1A3C34), // Deep Forest
-                                          )
-                                        : Text(
-                                            'Log In',
-                                            style: GoogleFonts.inter(
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 16,
+                                    child:
+                                        _isLoading
+                                            ? const CircularProgressIndicator(
+                                              color: Color(0xFF1A3C34),
+                                            )
+                                            : Text(
+                                              'Log In',
+                                              style: GoogleFonts.inter(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 16,
+                                              ),
                                             ),
-                                          ),
                                   ),
                                 ),
                               ],
@@ -360,18 +381,28 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           text: 'Don’t have an account? ',
                           style: GoogleFonts.inter(
                             fontSize: 14,
-                            color: const Color(0xFFB0B0B0), // Gray
+                            color: const Color(0xFFB0B0B0),
                           ),
                           children: [
                             TextSpan(
                               text: 'Sign Up',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: const Color(0xFF39FF14), // Vibrant Lime
+                                color: const Color(0xFF39FF14),
                                 decoration: TextDecoration.underline,
                               ),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () => Navigator.pushNamed(context, '/signup'),
+                              recognizer:
+                                  TapGestureRecognizer()
+                                    ..onTap = () {
+                                      // Replaced Navigator.pushNamed with Navigator.push
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) => const SignupScreen(),
+                                        ),
+                                      );
+                                    },
                             ),
                           ],
                         ),
@@ -384,13 +415,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               ),
             ],
           ),
-          if (_isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.6),
-              child: const Center(
-                child: CircularProgressIndicator(color: Color(0xFF39FF14)), // Vibrant Lime
-              ),
-            ),
         ],
       ),
     );

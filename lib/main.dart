@@ -2,12 +2,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:renosh_app/firebase_options.dart';
-import 'package:renosh_app/screens/signup_screen.dart';
-import 'package:renosh_app/screens/login_screen.dart';
+import 'package:renosh_app/screens/auth_screen/signup_screen.dart';
+import 'package:renosh_app/screens/auth_screen/login_screen.dart';
 import 'package:renosh_app/screens/establishment_dashboard.dart';
-import 'package:renosh_app/screens/food_track_screen.dart';
-import 'package:renosh_app/screens/history_screen.dart';
-import 'package:renosh_app/screens/profile_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -23,10 +20,16 @@ class MyApp extends StatelessWidget {
   Future<Widget> _getHomeScreen() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return const SignupScreen();
-    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final doc =
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
     if (!doc.exists) return const SignupScreen();
     final role = doc.data()!['role'];
-    return role == 'Food Establishment' ? const EstablishmentDashboard() : const Placeholder();
+    return role == 'Food Establishment'
+        ? const EstablishmentDashboard()
+        : const Placeholder();
   }
 
   @override
@@ -57,16 +60,27 @@ class MyApp extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF39FF14),
             foregroundColor: const Color(0xFF1A3C34),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            textStyle: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+            ),
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: const Color(0xFF2D2D2D),
-          labelStyle: GoogleFonts.inter(color: const Color(0xFFB0B0B0), fontSize: 12),
-          hintStyle: GoogleFonts.inter(color: const Color(0xFFB0B0B0), fontSize: 12),
+          labelStyle: GoogleFonts.inter(
+            color: const Color(0xFFB0B0B0),
+            fontSize: 12,
+          ),
+          hintStyle: GoogleFonts.inter(
+            color: const Color(0xFFB0B0B0),
+            fontSize: 12,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -75,8 +89,15 @@ class MyApp extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
           ),
-          errorStyle: GoogleFonts.inter(fontSize: 12, color: const Color(0xFFFF4A4A), height: 1.2),
-          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          errorStyle: GoogleFonts.inter(
+            fontSize: 12,
+            color: const Color(0xFFFF4A4A),
+            height: 1.2,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 16,
+            horizontal: 16,
+          ),
         ),
       ),
       home: FutureBuilder<Widget>(
@@ -85,21 +106,14 @@ class MyApp extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
               backgroundColor: Color(0xFF1A3C34),
-              body: Center(child: CircularProgressIndicator(color: Color(0xFF39FF14))),
+              body: Center(
+                child: CircularProgressIndicator(color: Color(0xFF39FF14)),
+              ),
             );
           }
           return snapshot.data ?? const SignupScreen();
         },
       ),
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignupScreen(),
-        '/establishment_dashboard': (context) => const EstablishmentDashboard(),
-        '/acceptor_dashboard': (context) => const Placeholder(),
-        '/food_track': (context) => const FoodTrackScreen(),
-        '/history': (context) => const HistoryScreen(),
-        '/profile': (context) => const ProfileScreen(),
-      },
     );
   }
 }

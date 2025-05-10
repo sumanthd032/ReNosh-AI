@@ -98,6 +98,12 @@ class _FoodTrackScreenState extends State<FoodTrackScreen>
       _showErrorSnackBar('Quantity surplus cannot exceed quantity made.');
       return false;
     }
+    if (sold + surplus > made) {
+      _showErrorSnackBar(
+        'Sum of sold and surplus cannot exceed quantity made.',
+      );
+      return false;
+    }
     return true;
   }
 
@@ -326,74 +332,163 @@ class _FoodTrackScreenState extends State<FoodTrackScreen>
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            backgroundColor: const Color(0xFF2D2D2D),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text(
-              data['item_name'],
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFFF9F7F3),
+          (context) => Dialog(
+            backgroundColor: Colors.transparent,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF2D2D2D),
+                    const Color(0xFF1A3C34).withOpacity(0.9),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 12,
+                    offset: const Offset(4, 4),
+                  ),
+                  BoxShadow(
+                    color: const Color(0xFFF9F7F3).withOpacity(0.05),
+                    blurRadius: 12,
+                    offset: const Offset(-4, -4),
+                  ),
+                ],
               ),
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Produced: ${data['quantity_made']}',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: const Color(0xFFF9F7F3),
+              child: SingleChildScrollView(
+                child: FadeTransition(
+                  opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
+                    CurvedAnimation(
+                      parent: ModalRoute.of(context)!.animation!,
+                      curve: Curves.easeOut,
                     ),
                   ),
-                  Text(
-                    'Sold: ${data['quantity_sold']}',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: const Color(0xFFF9F7F3),
-                    ),
-                  ),
-                  Text(
-                    'Surplus: ${data['quantity_surplus']}',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: const Color(0xFFF9F7F3),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Status: ${_getSurplusTag(data['quantity_made'], data['quantity_surplus'])}',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: _getTagColor(
-                        _getSurplusTag(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        data['item_name'],
+                        style: GoogleFonts.inter(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFFF9F7F3),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDetailRow(
+                        icon: Icons.production_quantity_limits,
+                        label: 'Produced',
+                        value: '${data['quantity_made']}',
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDetailRow(
+                        icon: Icons.sell,
+                        label: 'Sold',
+                        value: '${data['quantity_sold']}',
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDetailRow(
+                        icon: Icons.add_chart,
+                        label: 'Surplus',
+                        value: '${data['quantity_surplus']}',
+                      ),
+                      const SizedBox(height: 16),
+                      _buildStatusChip(
+                        status: _getSurplusTag(
                           data['quantity_made'],
                           data['quantity_surplus'],
                         ),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  'Close',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: const Color(0xFF39FF14),
+                      const SizedBox(height: 24),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF39FF14),
+                            foregroundColor: const Color(0xFF1A3C34),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            elevation: 0,
+                            shadowColor: const Color(
+                              0xFF39FF14,
+                            ).withOpacity(0.4),
+                          ),
+                          child: Text(
+                            'Close',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
+    );
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, color: const Color(0xFF39FF14), size: 20),
+        const SizedBox(width: 12),
+        Text(
+          '$label: ',
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFFB0B0B0),
+          ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFFF9F7F3),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusChip({required String status}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: _getTagColor(status).withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _getTagColor(status), width: 1),
+      ),
+      child: Text(
+        status,
+        style: GoogleFonts.inter(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: _getTagColor(status),
+        ),
+      ),
     );
   }
 
@@ -441,7 +536,11 @@ class _FoodTrackScreenState extends State<FoodTrackScreen>
             blurRadius: 10,
             offset: const Offset(4, 4),
           ),
-          // BoxSb
+          // BoxShadow(
+          //   color: const Colorrices(0xFFF9F7F3).withOpacity(0.05),
+          //   blurRadius: 10,
+          //   offset: const Offset(-4, -4),
+          // ),
         ],
       ),
       child: Column(
