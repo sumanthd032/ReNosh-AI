@@ -121,6 +121,8 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Stack(
       children: [
         Container(
@@ -140,6 +142,7 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
             color: const Color(0xFF39FF14),
             backgroundColor: const Color(0xFF2D2D2D),
             onRefresh: () async {
+              debugPrint('Refreshing AcceptorDashboard');
               await Future.delayed(const Duration(milliseconds: 500));
             },
             child: SingleChildScrollView(
@@ -147,14 +150,69 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${_getGreeting()}, Acceptor!',
-                    style: GoogleFonts.inter(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFFF9F7F3),
+                  if (user == null)
+                    Text(
+                      '${_getGreeting()}!',
+                      style: GoogleFonts.inter(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFFF9F7F3),
+                      ),
+                    )
+                  else
+                    StreamBuilder<DocumentSnapshot>(
+                      stream:
+                          FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(user.uid)
+                              .snapshots(),
+                      builder: (context, snapshot) {
+                        String organizationName = 'Organization';
+                        if (snapshot.hasError) {
+                          debugPrint(
+                            'Error fetching user data: ${snapshot.error}',
+                          );
+                          return Text(
+                            '${_getGreeting()}, $organizationName!',
+                            style: GoogleFonts.inter(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFFF9F7F3),
+                            ),
+                          );
+                        }
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Text(
+                            '${_getGreeting()}...',
+                            style: GoogleFonts.inter(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFFF9F7F3),
+                            ),
+                          );
+                        }
+                        if (snapshot.hasData && snapshot.data!.exists) {
+                          final data =
+                              snapshot.data!.data() as Map<String, dynamic>;
+                          organizationName =
+                              data['org_name'] as String? ?? 'Organization';
+                          debugPrint(
+                            'Fetched user ${user.uid}: org_name=$organizationName',
+                          );
+                        } else {
+                          debugPrint('User document ${user.uid} not found');
+                        }
+                        return Text(
+                          '${_getGreeting()}, $organizationName!',
+                          style: GoogleFonts.inter(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFFF9F7F3),
+                          ),
+                        );
+                      },
                     ),
-                  ),
                   const SizedBox(height: 8),
                   Text(
                     'Explore available food donations',
