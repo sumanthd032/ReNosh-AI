@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:renosh_app/screens/donar_location_screen.dart';
 
 class AcceptorHistory extends StatelessWidget {
   const AcceptorHistory({super.key});
@@ -100,7 +101,14 @@ class AcceptorHistory extends StatelessWidget {
                           ),
                           onPressed: () {
                             debugPrint(
-                              'Location icon tapped for address: $address',
+                              'Navigating to DonorLocationScreen for address: $address',
+                            );
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) =>
+                                        DonorLocationScreen(address: address),
+                              ),
                             );
                           },
                         ),
