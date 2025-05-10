@@ -84,7 +84,7 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
           if (mounted)
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
+              MaterialPageRoute(builder: (context) => LoginScreen()),
             );
         }
       } else {
