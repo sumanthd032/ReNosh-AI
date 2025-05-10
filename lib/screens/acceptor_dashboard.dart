@@ -2,7 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:renosh_app/screens/acceptors_settings_screen.dart';
+import 'dart:math';
+
+double calculateDistance(LatLng point1, LatLng point2) {
+  const double earthRadius = 6371; // km
+  double lat1 = point1.latitude * pi / 180;
+  double lat2 = point2.latitude * pi / 180;
+  double deltaLat = (point2.latitude - point1.latitude) * pi / 180;
+  double deltaLon = (point2.longitude - point1.longitude) * pi / 180;
+
+  double a =
+      sin(deltaLat / 2) * sin(deltaLat / 2) +
+      cos(lat1) * cos(lat2) * sin(deltaLon / 2) * sin(deltaLon / 2);
+  double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+  return earthRadius * c; // Distance in km
+}
 
 class AcceptorDashboard extends StatefulWidget {
   const AcceptorDashboard({super.key});
@@ -150,69 +167,97 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (user == null)
-                    Text(
-                      '${_getGreeting()}!',
-                      style: GoogleFonts.inter(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFFF9F7F3),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child:
+                            user == null
+                                ? Text(
+                                  '${_getGreeting()}!',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFFF9F7F3),
+                                  ),
+                                )
+                                : StreamBuilder<DocumentSnapshot>(
+                                  stream:
+                                      FirebaseFirestore.instance
+                                          .collection('users')
+                                          .doc(user.uid)
+                                          .snapshots(),
+                                  builder: (context, snapshot) {
+                                    String organizationName = 'Organization';
+                                    if (snapshot.hasError) {
+                                      debugPrint(
+                                        'Error fetching user data: ${snapshot.error}',
+                                      );
+                                      return Text(
+                                        '${_getGreeting()}, $organizationName!',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w800,
+                                          color: const Color(0xFFF9F7F3),
+                                        ),
+                                      );
+                                    }
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return Text(
+                                        '${_getGreeting()}...',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w800,
+                                          color: const Color(0xFFF9F7F3),
+                                        ),
+                                      );
+                                    }
+                                    if (snapshot.hasData &&
+                                        snapshot.data!.exists) {
+                                      final data =
+                                          snapshot.data!.data()
+                                              as Map<String, dynamic>;
+                                      organizationName =
+                                          data['org_name'] as String? ??
+                                          'Organization';
+                                      debugPrint(
+                                        'Fetched user ${user.uid}: org_name=$organizationName',
+                                      );
+                                    } else {
+                                      debugPrint(
+                                        'User document ${user.uid} not found',
+                                      );
+                                    }
+                                    return Text(
+                                      '${_getGreeting()}, $organizationName!',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w800,
+                                        color: const Color(0xFFF9F7F3),
+                                      ),
+                                    );
+                                  },
+                                ),
                       ),
-                    )
-                  else
-                    StreamBuilder<DocumentSnapshot>(
-                      stream:
-                          FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(user.uid)
-                              .snapshots(),
-                      builder: (context, snapshot) {
-                        String organizationName = 'Organization';
-                        if (snapshot.hasError) {
-                          debugPrint(
-                            'Error fetching user data: ${snapshot.error}',
-                          );
-                          return Text(
-                            '${_getGreeting()}, $organizationName!',
-                            style: GoogleFonts.inter(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFFF9F7F3),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.settings,
+                          color: Color(0xFFF9F7F3),
+                          size: 28,
+                        ),
+                        onPressed: () {
+                          debugPrint('Navigating to AcceptorSettingsScreen');
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => const AcceptorSettingsScreen(),
                             ),
                           );
-                        }
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Text(
-                            '${_getGreeting()}...',
-                            style: GoogleFonts.inter(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFFF9F7F3),
-                            ),
-                          );
-                        }
-                        if (snapshot.hasData && snapshot.data!.exists) {
-                          final data =
-                              snapshot.data!.data() as Map<String, dynamic>;
-                          organizationName =
-                              data['org_name'] as String? ?? 'Organization';
-                          debugPrint(
-                            'Fetched user ${user.uid}: org_name=$organizationName',
-                          );
-                        } else {
-                          debugPrint('User document ${user.uid} not found');
-                        }
-                        return Text(
-                          '${_getGreeting()}, $organizationName!',
-                          style: GoogleFonts.inter(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFFF9F7F3),
-                          ),
-                        );
-                      },
-                    ),
+                        },
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     'Explore available food donations',
@@ -223,24 +268,51 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  StreamBuilder<QuerySnapshot>(
+                  StreamBuilder<DocumentSnapshot>(
                     stream:
-                        FirebaseFirestore.instance
-                            .collection('donations')
-                            .where('status', isEqualTo: 'Available')
-                            .orderBy('createdAt', descending: true)
-                            .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        user != null
+                            ? FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .snapshots()
+                            : null,
+                    builder: (context, userSnapshot) {
+                      if (user == null) {
+                        return Column(
+                          children: [
+                            _buildAvailableDonationsCard(0),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFFFF4A4A,
+                                ).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                'Please log in to view donations.',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: const Color(0xFFF9F7F3),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      if (userSnapshot.connectionState ==
+                          ConnectionState.waiting) {
                         return const Center(
                           child: CircularProgressIndicator(
                             color: Color(0xFF39FF14),
                           ),
                         );
                       }
-                      if (snapshot.hasError) {
+                      if (userSnapshot.hasError ||
+                          !userSnapshot.hasData ||
+                          !userSnapshot.data!.exists) {
                         debugPrint(
-                          'Error in donations query: ${snapshot.error}',
+                          'Error fetching user data: ${userSnapshot.error}',
                         );
                         return Column(
                           children: [
@@ -254,7 +326,7 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                'Failed to load donations. Pull to refresh.',
+                                'Error loading user data.',
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
                                   color: const Color(0xFFF9F7F3),
@@ -264,147 +336,374 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                           ],
                         );
                       }
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        debugPrint('No available donations found');
+
+                      final userData =
+                          userSnapshot.data!.data() as Map<String, dynamic>;
+                      final double maxDistanceKm =
+                          (userData['maxDistanceKm'] as num?)?.toDouble() ?? 50;
+                      final acceptorLocation =
+                          userData.containsKey('location')
+                              ? LatLng(
+                                (userData['location']['latitude'] as num)
+                                    .toDouble(),
+                                (userData['location']['longitude'] as num)
+                                    .toDouble(),
+                              )
+                              : null;
+
+                      if (acceptorLocation == null) {
+                        debugPrint(
+                          'Acceptor location not found for user: ${user.uid}',
+                        );
                         return Column(
                           children: [
                             _buildAvailableDonationsCard(0),
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF2D2D2D).withOpacity(0.7),
+                                color: const Color(
+                                  0xFFFF4A4A,
+                                ).withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                'No available donations at the moment.',
+                                'Please set your location in settings.',
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
-                                  color: const Color(0xFFB0B0B0),
+                                  color: const Color(0xFFF9F7F3),
                                 ),
                               ),
                             ),
                           ],
                         );
                       }
-                      final docs = snapshot.data!.docs;
-                      debugPrint('Found ${docs.length} available donations');
-                      return Column(
-                        children: [
-                          _buildAvailableDonationsCard(docs.length),
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: docs.length,
-                            itemBuilder: (context, index) {
-                              final data =
-                                  docs[index].data() as Map<String, dynamic>;
-                              final docId = docs[index].id;
-                              final timestamp =
-                                  (data['createdAt'] as Timestamp).toDate();
-                              final pickupTime = data['pickupTime'] as String;
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 16),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF2D2D2D),
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
-                                      blurRadius: 10,
-                                      offset: const Offset(4, 4),
+
+                      return StreamBuilder<QuerySnapshot>(
+                        stream:
+                            FirebaseFirestore.instance
+                                .collection('donations')
+                                .where('status', isEqualTo: 'Available')
+                                .orderBy('createdAt', descending: true)
+                                .snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF39FF14),
+                              ),
+                            );
+                          }
+                          if (snapshot.hasError) {
+                            debugPrint(
+                              'Error in donations query: ${snapshot.error}',
+                            );
+                            return Column(
+                              children: [
+                                _buildAvailableDonationsCard(0),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(
+                                      0xFFFF4A4A,
+                                    ).withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    'Failed to load donations. Pull to refresh.',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      color: const Color(0xFFF9F7F3),
                                     ),
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFFF9F7F3,
-                                      ).withOpacity(0.05),
-                                      blurRadius: 10,
-                                      offset: const Offset(-4, -4),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            data['item_name'],
-                                            style: GoogleFonts.inter(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w600,
-                                              color: const Color(0xFFF9F7F3),
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'Quantity: ${data['quantity']}',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 14,
-                                              color: const Color(0xFFB0B0B0),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'Posted: ${DateFormat('MMM dd, yyyy – HH:mm').format(timestamp)}',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 12,
-                                              color: const Color(0xFFB0B0B0),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'Pickup Time: $pickupTime',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 12,
-                                              color: const Color(0xFFB0B0B0),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                              ],
+                            );
+                          }
+                          if (!snapshot.hasData ||
+                              snapshot.data!.docs.isEmpty) {
+                            debugPrint('No available donations found');
+                            return Column(
+                              children: [
+                                _buildAvailableDonationsCard(0),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(
+                                      0xFF2D2D2D,
+                                    ).withOpacity(0.7),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    'No available donations at the moment.',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      color: const Color(0xFFB0B0B0),
                                     ),
-                                    ElevatedButton(
-                                      onPressed:
-                                          () => _claimDonation(
-                                            docId,
-                                            data['item_name'],
-                                          ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(
-                                          0xFF39FF14,
-                                        ),
-                                        foregroundColor: const Color(
-                                          0xFF1A3C34,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 8,
-                                        ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          final donationDocs = snapshot.data!.docs;
+
+                          return FutureBuilder<List<Map<String, dynamic>>>(
+                            future: Future.wait(
+                              donationDocs.map((doc) async {
+                                final data = doc.data() as Map<String, dynamic>;
+                                final establishmentId =
+                                    data['establishmentId'] as String;
+                                final donorDoc =
+                                    await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(establishmentId)
+                                        .get();
+                                if (donorDoc.exists &&
+                                    donorDoc.data()!.containsKey('location')) {
+                                  final donorLocation = LatLng(
+                                    (donorDoc.data()!['location']['latitude']
+                                            as num)
+                                        .toDouble(),
+                                    (donorDoc.data()!['location']['longitude']
+                                            as num)
+                                        .toDouble(),
+                                  );
+                                  final distance = calculateDistance(
+                                    acceptorLocation,
+                                    donorLocation,
+                                  );
+                                  debugPrint(
+                                    'Distance to $establishmentId: $distance km',
+                                  );
+                                  return {
+                                    'doc': doc,
+                                    'distance': distance,
+                                    'withinRange': distance <= maxDistanceKm,
+                                  };
+                                }
+                                debugPrint(
+                                  'No location for donor: $establishmentId',
+                                );
+                                return {
+                                  'doc': doc,
+                                  'distance': double.infinity,
+                                  'withinRange': false,
+                                };
+                              }),
+                            ),
+                            builder: (context, futureSnapshot) {
+                              if (futureSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFF39FF14),
+                                  ),
+                                );
+                              }
+                              if (futureSnapshot.hasError) {
+                                debugPrint(
+                                  'Error processing distances: ${futureSnapshot.error}',
+                                );
+                                return Column(
+                                  children: [
+                                    _buildAvailableDonationsCard(0),
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFFFF4A4A,
+                                        ).withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
-                                        'Request Claim',
+                                        'Error processing donations.',
                                         style: GoogleFonts.inter(
                                           fontSize: 14,
-                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xFFF9F7F3),
                                         ),
                                       ),
                                     ),
                                   ],
-                                ),
+                                );
+                              }
+
+                              final filteredDonations =
+                                  futureSnapshot.data!
+                                      .where((item) => item['withinRange'])
+                                      .map(
+                                        (item) =>
+                                            item['doc'] as DocumentSnapshot,
+                                      )
+                                      .toList();
+
+                              debugPrint(
+                                'Found ${filteredDonations.length} donations within $maxDistanceKm km',
+                              );
+
+                              return Column(
+                                children: [
+                                  _buildAvailableDonationsCard(
+                                    filteredDonations.length,
+                                  ),
+                                  if (filteredDonations.isEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF2D2D2D,
+                                        ).withOpacity(0.7),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        'No donations within $maxDistanceKm km.',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          color: const Color(0xFFB0B0B0),
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    ListView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount: filteredDonations.length,
+                                      itemBuilder: (context, index) {
+                                        final doc = filteredDonations[index];
+                                        final data =
+                                            doc.data() as Map<String, dynamic>;
+                                        final docId = doc.id;
+                                        final timestamp =
+                                            (data['createdAt'] as Timestamp)
+                                                .toDate();
+                                        final pickupTime =
+                                            data['pickupTime'] as String;
+                                        return Container(
+                                          margin: const EdgeInsets.only(
+                                            bottom: 16,
+                                          ),
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF2D2D2D),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withOpacity(
+                                                  0.2,
+                                                ),
+                                                blurRadius: 10,
+                                                offset: const Offset(4, 4),
+                                              ),
+                                              BoxShadow(
+                                                color: const Color(
+                                                  0xFFF9F7F3,
+                                                ).withOpacity(0.05),
+                                                blurRadius: 10,
+                                                offset: const Offset(-4, -4),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      data['item_name'],
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: const Color(
+                                                          0xFFF9F7F3,
+                                                        ),
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      'Quantity: ${data['quantity']}',
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: 14,
+                                                        color: const Color(
+                                                          0xFFB0B0B0,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      'Posted: ${DateFormat('MMM dd, yyyy – HH:mm').format(timestamp)}',
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: 12,
+                                                        color: const Color(
+                                                          0xFFB0B0B0,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      'Pickup Time: $pickupTime',
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: 12,
+                                                        color: const Color(
+                                                          0xFFB0B0B0,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed:
+                                                    () => _claimDonation(
+                                                      docId,
+                                                      data['item_name'],
+                                                    ),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: const Color(
+                                                    0xFF39FF14,
+                                                  ),
+                                                  foregroundColor: const Color(
+                                                    0xFF1A3C34,
+                                                  ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 8,
+                                                      ),
+                                                ),
+                                                child: Text(
+                                                  'Request Claim',
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                ],
                               );
                             },
-                          ),
-                        ],
+                          );
+                        },
                       );
                     },
                   ),
