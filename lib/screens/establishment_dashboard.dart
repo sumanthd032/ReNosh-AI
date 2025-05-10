@@ -14,7 +14,8 @@ class EstablishmentDashboard extends StatefulWidget {
   State<EstablishmentDashboard> createState() => _EstablishmentDashboardState();
 }
 
-class _EstablishmentDashboardState extends State<EstablishmentDashboard> with SingleTickerProviderStateMixin {
+class _EstablishmentDashboardState extends State<EstablishmentDashboard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -29,10 +30,14 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
     );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
@@ -66,7 +71,11 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        final doc =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .get();
         if (doc.exists && doc.data()!['role'] == 'Food Establishment') {
           setState(() {
             _establishmentName = doc.data()!['name'];
@@ -89,7 +98,10 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
       SnackBar(
         content: Text(
           message,
-          style: GoogleFonts.inter(color: const Color(0xFFF9F7F3), fontSize: 14),
+          style: GoogleFonts.inter(
+            color: const Color(0xFFF9F7F3),
+            fontSize: 14,
+          ),
           overflow: TextOverflow.ellipsis,
         ),
         backgroundColor: const Color(0xFFFF4A4A),
@@ -106,7 +118,10 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
       SnackBar(
         content: Text(
           message,
-          style: GoogleFonts.inter(color: const Color(0xFF1A3C34), fontSize: 14),
+          style: GoogleFonts.inter(
+            color: const Color(0xFF1A3C34),
+            fontSize: 14,
+          ),
           overflow: TextOverflow.ellipsis,
         ),
         backgroundColor: const Color(0xFF39FF14),
@@ -158,7 +173,9 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
       await FirebaseFirestore.instance.collection('donations').add({
         'establishmentId': user!.uid,
         'quantity': '$quantity meals',
-        'pickupTime': DateFormat('HH:mm').format(DateTime.now().add(const Duration(hours: 2))),
+        'pickupTime': DateFormat(
+          'HH:mm',
+        ).format(DateTime.now().add(const Duration(hours: 2))),
         'status': 'Available',
         'createdAt': Timestamp.now(),
       });
@@ -215,15 +232,29 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [const Color(0xFF2D2D2D), const Color(0xFF1A3C34).withOpacity(0.9)],
+            colors: [
+              const Color(0xFF2D2D2D),
+              const Color(0xFF1A3C34).withOpacity(0.9),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(4, 4)),
-            BoxShadow(color: const Color(0xFFF9F7F3).withOpacity(0.03), blurRadius: 8, offset: const Offset(-4, -4)),
-            BoxShadow(color: const Color(0xFF39FF14).withOpacity(0.2), blurRadius: 12),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(4, 4),
+            ),
+            BoxShadow(
+              color: const Color(0xFFF9F7F3).withOpacity(0.03),
+              blurRadius: 8,
+              offset: const Offset(-4, -4),
+            ),
+            BoxShadow(
+              color: const Color(0xFF39FF14).withOpacity(0.2),
+              blurRadius: 12,
+            ),
           ],
           border: Border.all(color: const Color(0xFF39FF14).withOpacity(0.3)),
         ),
@@ -236,19 +267,29 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
                 const SizedBox(width: 8),
                 Text(
                   'AI Insights',
-                  style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFFF9F7F3)),
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFF9F7F3),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             Text(
               'Optimize surplus by donating 20% more this week to reduce waste by 5kg.',
-              style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFF9F7F3)),
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: const Color(0xFFF9F7F3),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Powered by ReNosh AI (Gemini + AutoML)',
-              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFFB0B0B0)),
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: const Color(0xFFB0B0B0),
+              ),
             ),
           ],
         ),
@@ -261,14 +302,25 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [const Color(0xFF2D2D2D), const Color(0xFF1A3C34).withOpacity(0.9)],
+          colors: [
+            const Color(0xFF2D2D2D),
+            const Color(0xFF1A3C34).withOpacity(0.9),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(4, 4)),
-          BoxShadow(color: const Color(0xFFF9F7F3).withOpacity(0.03), blurRadius: 8, offset: const Offset(-4, -4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(4, 4),
+          ),
+          BoxShadow(
+            color: const Color(0xFFF9F7F3).withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(-4, -4),
+          ),
         ],
       ),
       child: Column(
@@ -276,7 +328,11 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
         children: [
           Text(
             'Sustainability Tracking',
-            style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFFF9F7F3)),
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFFF9F7F3),
+            ),
           ),
           const SizedBox(height: 16),
           CarouselSlider(
@@ -298,9 +354,33 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
                     titlesData: const FlTitlesData(show: false),
                     borderData: FlBorderData(show: false),
                     barGroups: [
-                      BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: 50, color: const Color(0xFF39FF14))]),
-                      BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: 70, color: const Color(0xFF39FF14))]),
-                      BarChartGroupData(x: 2, barRods: [BarChartRodData(toY: 60, color: const Color(0xFF39FF14))]),
+                      BarChartGroupData(
+                        x: 0,
+                        barRods: [
+                          BarChartRodData(
+                            toY: 50,
+                            color: const Color(0xFF39FF14),
+                          ),
+                        ],
+                      ),
+                      BarChartGroupData(
+                        x: 1,
+                        barRods: [
+                          BarChartRodData(
+                            toY: 70,
+                            color: const Color(0xFF39FF14),
+                          ),
+                        ],
+                      ),
+                      BarChartGroupData(
+                        x: 2,
+                        barRods: [
+                          BarChartRodData(
+                            toY: 60,
+                            color: const Color(0xFF39FF14),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -313,7 +393,12 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
                     borderData: FlBorderData(show: false),
                     lineBarsData: [
                       LineChartBarData(
-                        spots: const [FlSpot(0, 10), FlSpot(1, 15), FlSpot(2, 12), FlSpot(3, 20)],
+                        spots: const [
+                          FlSpot(0, 10),
+                          FlSpot(1, 15),
+                          FlSpot(2, 12),
+                          FlSpot(3, 20),
+                        ],
                         isCurved: true,
                         color: const Color(0xFF39FF14),
                         dotData: const FlDotData(show: false),
@@ -327,8 +412,16 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
                 chart: PieChart(
                   PieChartData(
                     sections: [
-                      PieChartSectionData(value: 40, color: const Color(0xFF39FF14), title: 'Optimized'),
-                      PieChartSectionData(value: 60, color: const Color(0xFFB0B0B0), title: 'Standard'),
+                      PieChartSectionData(
+                        value: 40,
+                        color: const Color(0xFF39FF14),
+                        title: 'Optimized',
+                      ),
+                      PieChartSectionData(
+                        value: 60,
+                        color: const Color(0xFFB0B0B0),
+                        title: 'Standard',
+                      ),
                     ],
                     sectionsSpace: 0,
                     centerSpaceRadius: 40,
@@ -357,7 +450,11 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
         children: [
           Text(
             title,
-            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFFF9F7F3)),
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFFF9F7F3),
+            ),
           ),
           const SizedBox(height: 8),
           SizedBox(height: 120, child: chart),
@@ -371,14 +468,25 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [const Color(0xFF2D2D2D), const Color(0xFF1A3C34).withOpacity(0.9)],
+          colors: [
+            const Color(0xFF2D2D2D),
+            const Color(0xFF1A3C34).withOpacity(0.9),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(4, 4)),
-          BoxShadow(color: const Color(0xFFF9F7F3).withOpacity(0.03), blurRadius: 8, offset: const Offset(-4, -4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(4, 4),
+          ),
+          BoxShadow(
+            color: const Color(0xFFF9F7F3).withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(-4, -4),
+          ),
         ],
       ),
       child: Column(
@@ -386,23 +494,36 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
         children: [
           Text(
             'Surplus Items',
-            style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFFF9F7F3)),
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFFF9F7F3),
+            ),
           ),
           const SizedBox(height: 16),
           StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('food_tracking')
-                .where('establishmentId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-                .where('quantity_surplus', isGreaterThan: 0)
-                .snapshots(),
+            stream:
+                FirebaseFirestore.instance
+                    .collection('food_tracking')
+                    .where(
+                      'establishmentId',
+                      isEqualTo: FirebaseAuth.instance.currentUser?.uid,
+                    )
+                    .where('quantity_surplus', isGreaterThan: 0)
+                    .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: Color(0xFF39FF14)));
+                return const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF39FF14)),
+                );
               }
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return Text(
                   'No surplus items.',
-                  style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFFB0B0B0),
+                  ),
                 );
               }
               return ListView.builder(
@@ -421,7 +542,10 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
                       color: const Color(0xFF2D2D2D),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8),
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                        ),
                       ],
                     ),
                     child: Column(
@@ -429,11 +553,18 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
                       children: [
                         Text(
                           item,
-                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFFF9F7F3)),
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFF9F7F3),
+                          ),
                         ),
                         Text(
                           'Surplus: $quantity',
-                          style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: const Color(0xFFB0B0B0),
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Row(
@@ -447,11 +578,16 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF39FF14),
                                 foregroundColor: const Color(0xFF1A3C34),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                               child: Text(
                                 'Donate',
-                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                             ElevatedButton(
@@ -462,26 +598,38 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFF9F7F3),
                                 foregroundColor: const Color(0xFF1A3C34),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                               child: Text(
                                 'Sell',
-                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                             ElevatedButton(
                               onPressed: () {
                                 HapticFeedback.lightImpact();
-                                _showSuccessSnackBar('Other actions coming soon!');
+                                _showSuccessSnackBar(
+                                  'Other actions coming soon!',
+                                );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFB0B0B0),
                                 foregroundColor: const Color(0xFF1A3C34),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                               child: Text(
                                 'Other',
-                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
@@ -503,14 +651,25 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [const Color(0xFF2D2D2D), const Color(0xFF1A3C34).withOpacity(0.9)],
+          colors: [
+            const Color(0xFF2D2D2D),
+            const Color(0xFF1A3C34).withOpacity(0.9),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(4, 4)),
-          BoxShadow(color: const Color(0xFFF9F7F3).withOpacity(0.03), blurRadius: 8, offset: const Offset(-4, -4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(4, 4),
+          ),
+          BoxShadow(
+            color: const Color(0xFFF9F7F3).withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(-4, -4),
+          ),
         ],
       ),
       child: Column(
@@ -518,22 +677,38 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
         children: [
           Text(
             'Track Food Items',
-            style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFFF9F7F3)),
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFFF9F7F3),
+            ),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _foodItemController,
-            style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFF9F7F3)),
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xFFF9F7F3),
+            ),
             decoration: InputDecoration(
               labelText: 'Food Item Name',
-              labelStyle: GoogleFonts.inter(fontSize: 12, color: const Color(0xFFB0B0B0)),
+              labelStyle: GoogleFonts.inter(
+                fontSize: 12,
+                color: const Color(0xFFB0B0B0),
+              ),
               prefixIcon: const Icon(Icons.food_bank, color: Color(0xFF39FF14)),
               filled: true,
               fillColor: Colors.transparent,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
+                borderSide: const BorderSide(
+                  color: Color(0xFF39FF14),
+                  width: 2,
+                ),
               ),
             ),
           ),
@@ -544,17 +719,32 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
                 child: TextField(
                   controller: _quantityMadeController,
                   keyboardType: TextInputType.number,
-                  style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFF9F7F3)),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFFF9F7F3),
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Quantity Made',
-                    labelStyle: GoogleFonts.inter(fontSize: 12, color: const Color(0xFFB0B0B0)),
-                    prefixIcon: const Icon(Icons.production_quantity_limits, color: Color(0xFF39FF14)),
+                    labelStyle: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: const Color(0xFFB0B0B0),
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.production_quantity_limits,
+                      color: Color(0xFF39FF14),
+                    ),
                     filled: true,
                     fillColor: Colors.transparent,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF39FF14),
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
@@ -564,17 +754,32 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
                 child: TextField(
                   controller: _quantitySurplusController,
                   keyboardType: TextInputType.number,
-                  style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFF9F7F3)),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFFF9F7F3),
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Quantity Surplus',
-                    labelStyle: GoogleFonts.inter(fontSize: 12, color: const Color(0xFFB0B0B0)),
-                    prefixIcon: const Icon(Icons.add_chart, color: Color(0xFF39FF14)),
+                    labelStyle: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: const Color(0xFFB0B0B0),
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.add_chart,
+                      color: Color(0xFF39FF14),
+                    ),
                     filled: true,
                     fillColor: Colors.transparent,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF39FF14),
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
@@ -585,17 +790,29 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
           TextField(
             controller: _quantitySoldController,
             keyboardType: TextInputType.number,
-            style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFF9F7F3)),
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xFFF9F7F3),
+            ),
             decoration: InputDecoration(
               labelText: 'Quantity Sold',
-              labelStyle: GoogleFonts.inter(fontSize: 12, color: const Color(0xFFB0B0B0)),
+              labelStyle: GoogleFonts.inter(
+                fontSize: 12,
+                color: const Color(0xFFB0B0B0),
+              ),
               prefixIcon: const Icon(Icons.sell, color: Color(0xFF39FF14)),
               filled: true,
               fillColor: Colors.transparent,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
+                borderSide: const BorderSide(
+                  color: Color(0xFF39FF14),
+                  width: 2,
+                ),
               ),
             ),
           ),
@@ -604,21 +821,27 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      HapticFeedback.lightImpact();
-                      _addFoodTracking();
-                    },
+              onPressed:
+                  _isLoading
+                      ? null
+                      : () {
+                        HapticFeedback.lightImpact();
+                        _addFoodTracking();
+                      },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF39FF14),
                 foregroundColor: const Color(0xFF1A3C34),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 elevation: 0,
               ),
               child: Text(
                 'Add Tracking',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
@@ -633,22 +856,46 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
       decoration: BoxDecoration(
         color: const Color(0xFF2D2D2D).withOpacity(0.9),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, -4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -4),
+          ),
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavItem('Home', Icons.home, true, () {}),
-          _buildNavItem('Food Track', Icons.inventory, false, () => Navigator.pushNamed(context, '/food_track')),
-          _buildNavItem('History', Icons.history, false, () => Navigator.pushNamed(context, '/history')),
-          _buildNavItem('Profile', Icons.person, false, () => Navigator.pushNamed(context, '/profile')),
+          _buildNavItem(
+            'Food Track',
+            Icons.inventory,
+            false,
+            () => Navigator.pushNamed(context, '/food_track'),
+          ),
+          _buildNavItem(
+            'History',
+            Icons.history,
+            false,
+            () => Navigator.pushNamed(context, '/history'),
+          ),
+          _buildNavItem(
+            'Profile',
+            Icons.person,
+            false,
+            () => Navigator.pushNamed(context, '/profile'),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(String title, IconData icon, bool isActive, VoidCallback onTap) {
+  Widget _buildNavItem(
+    String title,
+    IconData icon,
+    bool isActive,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -659,23 +906,38 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: isActive ? const Color(0xFF39FF14).withOpacity(0.2) : Colors.transparent,
-          boxShadow: isActive
-              ? [
-                  BoxShadow(color: const Color(0xFF39FF14).withOpacity(0.3), blurRadius: 8),
-                ]
-              : [],
+          color:
+              isActive
+                  ? const Color(0xFF39FF14).withOpacity(0.2)
+                  : Colors.transparent,
+          boxShadow:
+              isActive
+                  ? [
+                    BoxShadow(
+                      color: const Color(0xFF39FF14).withOpacity(0.3),
+                      blurRadius: 8,
+                    ),
+                  ]
+                  : [],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 24, color: isActive ? const Color(0xFF39FF14) : const Color(0xFFB0B0B0)),
+            Icon(
+              icon,
+              size: 24,
+              color:
+                  isActive ? const Color(0xFF39FF14) : const Color(0xFFB0B0B0),
+            ),
             Text(
               title,
               style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: isActive ? const Color(0xFF39FF14) : const Color(0xFFB0B0B0),
+                color:
+                    isActive
+                        ? const Color(0xFF39FF14)
+                        : const Color(0xFFB0B0B0),
               ),
             ),
           ],
@@ -695,66 +957,74 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard> with Si
               gradient: RadialGradient(
                 center: Alignment.center,
                 radius: 1.5,
-                colors: [const Color(0xFF1A3C34).withOpacity(0.95), const Color(0xFF2D2D2D).withOpacity(0.85)],
+                colors: [
+                  const Color(0xFF1A3C34).withOpacity(0.95),
+                  const Color(0xFF2D2D2D).withOpacity(0.85),
+                ],
               ),
             ),
           ),
           _isLoading
-              ? const Center(child: CircularProgressIndicator(color: Color(0xFF39FF14)))
+              ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF39FF14)),
+              )
               : Column(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 32),
-                            ScaleTransition(
-                              scale: _scaleAnimation,
-                              child: Image.asset(
-                                'assets/logo.jpg',
-                                width: 80,
-                                height: 80,
-                                semanticLabel: 'ReNosh Logo',
-                              ),
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 32,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 32),
+                          ScaleTransition(
+                            scale: _scaleAnimation,
+                            child: Image.asset(
+                              'assets/logo.jpg',
+                              width: 80,
+                              height: 80,
+                              semanticLabel: 'ReNosh Logo',
                             ),
-                            const SizedBox(height: 16),
-                            FadeTransition(
-                              opacity: _fadeAnimation,
-                              child: Text(
-                                '$_greeting, ${_establishmentName ?? 'Loading...'}!',
-                                style: GoogleFonts.inter(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w900,
-                                  color: const Color(0xFFF9F7F3),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Manage your surplus and track sustainability',
+                          ),
+                          const SizedBox(height: 16),
+                          FadeTransition(
+                            opacity: _fadeAnimation,
+                            child: Text(
+                              '$_greeting, ${_establishmentName ?? 'Loading...'}!',
                               style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                                color: const Color(0xFFB0B0B0),
+                                fontSize: 28,
+                                fontWeight: FontWeight.w900,
+                                color: const Color(0xFFF9F7F3),
                               ),
                             ),
-                            const SizedBox(height: 24),
-                            _buildAIInsightsCard(),
-                            const SizedBox(height: 24),
-                            _buildSustainabilityCharts(),
-                            const SizedBox(height: 24),
-                            _buildSurplusItems(),
-                            const SizedBox(height: 24),
-                            _buildFoodTrackingSection(),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Manage your surplus and track sustainability',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: const Color(0xFFB0B0B0),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          _buildAIInsightsCard(),
+                          const SizedBox(height: 24),
+                          _buildSustainabilityCharts(),
+                          const SizedBox(height: 24),
+                          _buildSurplusItems(),
+                          const SizedBox(height: 24),
+                          _buildFoodTrackingSection(),
+                        ],
                       ),
                     ),
-                    _buildBottomNavBar(),
-                  ],
-                ),
+                  ),
+                  _buildBottomNavBar(),
+                ],
+              ),
         ],
       ),
     );
