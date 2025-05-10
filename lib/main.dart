@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:renosh_app/firebase_options.dart';
 import 'package:renosh_app/screens/auth_screen/login_screen.dart';
 import 'package:renosh_app/screens/main_screen_establishment.dart';
+import 'package:renosh_app/screens/main_screen_acceptor.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -56,48 +57,8 @@ class MyApp extends StatelessWidget {
         debugPrint('Routing to MainScreenEstablishment.');
         return const MainScreenEstablishment();
       } else {
-        debugPrint('Acceptor role detected. Showing placeholder.');
-        return Scaffold(
-          backgroundColor: const Color(0xFF1A3C34),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Acceptor role not implemented yet.',
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFFF9F7F3),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () async {
-                    debugPrint('Signing out from Acceptor placeholder.');
-                    await FirebaseAuth.instance.signOut();
-                    if (context.mounted) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF39FF14),
-                    foregroundColor: const Color(0xFF1A3C34),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text(
-                    'Back to Login',
-                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        debugPrint('Acceptor role detected. Routing to MainScreenAcceptor.');
+        return const MainScreenAcceptor();
       }
     } catch (e) {
       debugPrint('Error fetching user role: $e');
