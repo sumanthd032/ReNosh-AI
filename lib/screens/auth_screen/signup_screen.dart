@@ -8,7 +8,7 @@ import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:renosh_app/screens/auth_screen/login_screen.dart';
-import 'package:renosh_app/screens/establishment_dashboard.dart';
+import 'package:renosh_app/main.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -17,8 +17,7 @@ class SignupScreen extends StatefulWidget {
   State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen>
-    with SingleTickerProviderStateMixin {
+class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -62,18 +61,17 @@ class _SignupScreenState extends State<SignupScreen>
     super.dispose();
   }
 
-  // Helper function to show SnackBar with consistent styling
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           message,
           style: GoogleFonts.inter(
-            color: const Color(0xFFF9F7F3), // Soft Cream
+            color: const Color(0xFFF9F7F3),
             fontSize: 14,
           ),
         ),
-        backgroundColor: const Color(0xFFFF4A4A), // Coral Red
+        backgroundColor: const Color(0xFFFF4A4A),
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -91,31 +89,21 @@ class _SignupScreenState extends State<SignupScreen>
               ? 'Establishment name is required'
               : 'Organization name is required',
         );
-      } else if (_selectedRole == 'Food Establishment' &&
-              _establishmentType == null ||
-          _selectedRole == 'Food Acceptor' && _orgType == null) {
+      } else if (_selectedRole == 'Food Establishment' && _establishmentType == null ||
+                 _selectedRole == 'Food Acceptor' && _orgType == null) {
         _showErrorSnackBar('Please select a type');
-      } else if (!_emailController.text.contains('@') ||
-          !EmailValidator.validate(_emailController.text)) {
+      } else if (!EmailValidator.validate(_emailController.text)) {
         _showErrorSnackBar('Enter a valid email address');
       } else if (_passwordController.text.length < 8) {
         _showErrorSnackBar('Password must be at least 8 characters');
       } else if (!_passwordController.text.contains(RegExp(r'[0-9]')) ||
-          !_passwordController.text.contains(
-            RegExp(r'[!@#$%^&*(),.?":{}|<>]'),
-          )) {
-        _showErrorSnackBar(
-          'Password must include a number and special character',
-        );
+                 !_passwordController.text.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+        _showErrorSnackBar('Password must include a number and special character');
       } else if (_confirmPasswordController.text != _passwordController.text) {
         _showErrorSnackBar('Passwords do not match');
       } else if (_addressController.text.trim().isEmpty) {
         _showErrorSnackBar('Address is required');
-      } else if (_contactController.text.trim().isEmpty) {
-        _showErrorSnackBar('Contact number is required');
-      } else if (!RegExp(
-        r'^\d{10}$',
-      ).hasMatch(_contactController.text.trim())) {
+      } else if (!RegExp(r'^\d{10}$').hasMatch(_contactController.text.trim())) {
         _showErrorSnackBar('Enter a valid 10-digit phone number');
       }
       return;
@@ -124,14 +112,13 @@ class _SignupScreenState extends State<SignupScreen>
     setState(() => _isLoading = true);
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
 
       final userData = {
-        'role': _selectedRole,
+        'role': _selectedRole == 'Food Establishment' ? 'Food Establishment' : 'Acceptor',
         'email': _emailController.text.trim(),
         'address': _addressController.text.trim(),
         'contact': _countryCode.dialCode! + _contactController.text.trim(),
@@ -150,16 +137,12 @@ class _SignupScreenState extends State<SignupScreen>
           .set(userData);
 
       if (mounted) {
-        // Changed Navigator.push to Navigator.pushReplacement
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => const EstablishmentDashboard(),
-          ),
+          MaterialPageRoute(builder: (context) => const MyApp()),
         );
       }
     } on FirebaseAuthException catch (e) {
-      // Handle specific Firebase errors with SnackBar
       String errorMessage;
       switch (e.code) {
         case 'email-already-in-use':
@@ -178,8 +161,12 @@ class _SignupScreenState extends State<SignupScreen>
           errorMessage = e.message ?? 'An error occurred during sign-up';
       }
       _showErrorSnackBar(errorMessage);
+    } catch (e) {
+      _showErrorSnackBar('Unexpected error: ${e.toString().split('] ').last}');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -215,16 +202,9 @@ class _SignupScreenState extends State<SignupScreen>
       ),
       child: Row(
         children: [
-          Expanded(
-            child: _buildToggleButton('Food Establishment', Icons.restaurant),
-          ),
+          Expanded(child: _buildToggleButton('Food Establishment', Icons.restaurant)),
           const SizedBox(width: 8),
-          Expanded(
-            child: _buildToggleButton(
-              'Food Acceptor',
-              Icons.volunteer_activism,
-            ),
-          ),
+          Expanded(child: _buildToggleButton('Food Acceptor', Icons.volunteer_activism)),
         ],
       ),
     );
@@ -249,26 +229,22 @@ class _SignupScreenState extends State<SignupScreen>
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF39FF14) : const Color(0xFF2D2D2D),
           borderRadius: BorderRadius.circular(24),
-          boxShadow:
-              isSelected
-                  ? [
-                    BoxShadow(
-                      color: const Color(0xFF39FF14).withOpacity(0.5),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                  : [],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF39FF14).withOpacity(0.5),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [],
         ),
         child: Row(
           children: [
             Icon(
               icon,
               size: 20,
-              color:
-                  isSelected
-                      ? const Color(0xFF1A3C34)
-                      : const Color(0xFFF9F7F3),
+              color: isSelected ? const Color(0xFF1A3C34) : const Color(0xFFF9F7F3),
             ),
             const SizedBox(width: 4),
             Text(
@@ -276,10 +252,7 @@ class _SignupScreenState extends State<SignupScreen>
               style: GoogleFonts.inter(
                 fontWeight: FontWeight.w600,
                 fontSize: 11,
-                color:
-                    isSelected
-                        ? const Color(0xFF1A3C34)
-                        : const Color(0xFFF9F7F3),
+                color: isSelected ? const Color(0xFF1A3C34) : const Color(0xFFF9F7F3),
               ),
             ),
           ],
@@ -294,7 +267,6 @@ class _SignupScreenState extends State<SignupScreen>
       backgroundColor: const Color(0xFF1A3C34),
       body: Stack(
         children: [
-          // Animated Gradient Background
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -356,7 +328,6 @@ class _SignupScreenState extends State<SignupScreen>
                       const SizedBox(height: 32),
                       _buildToggle(),
                       const SizedBox(height: 24),
-                      // Glassmorphism Form Card
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 400),
                         decoration: BoxDecoration(
@@ -383,123 +354,54 @@ class _SignupScreenState extends State<SignupScreen>
                               children: [
                                 TextFormField(
                                   controller: _nameController,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color: const Color(0xFFF9F7F3),
-                                  ),
+                                  style: GoogleFonts.inter(fontSize: 16, color: const Color(0xFFF9F7F3)),
                                   decoration: InputDecoration(
-                                    labelText:
-                                        _selectedRole == 'Food Establishment'
-                                            ? 'Establishment Name'
-                                            : 'Organization Name',
-                                    labelStyle: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
-                                    hintText:
-                                        _selectedRole == 'Food Establishment'
-                                            ? 'e.g., Green Leaf Restaurant'
-                                            : 'e.g., Hope NGO',
-                                    hintStyle: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
-                                    prefixIcon: const Icon(
-                                      Icons.store,
-                                      color: Color(0xFF39FF14),
-                                    ),
+                                    labelText: _selectedRole == 'Food Establishment' ? 'Establishment Name' : 'Organization Name',
+                                    labelStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
+                                    hintText: _selectedRole == 'Food Establishment' ? 'e.g., Green Leaf Restaurant' : 'e.g., Hope NGO',
+                                    hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
+                                    prefixIcon: const Icon(Icons.store, color: Color(0xFF39FF14)),
                                     filled: true,
                                     fillColor: const Color(0xFF2D2D2D),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFF39FF14),
-                                        width: 2,
-                                      ),
+                                      borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
                                     ),
                                   ),
                                   validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Name is required';
-                                    }
+                                    if (value == null || value.trim().isEmpty) return 'Name is required';
                                     return null;
                                   },
                                 ),
                                 const SizedBox(height: 16),
                                 DropdownButtonFormField<String>(
-                                  value:
-                                      _selectedRole == 'Food Establishment'
-                                          ? _establishmentType
-                                          : _orgType,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color: const Color(0xFFF9F7F3),
-                                  ),
+                                  value: _selectedRole == 'Food Establishment' ? _establishmentType : _orgType,
+                                  style: GoogleFonts.inter(fontSize: 16, color: const Color(0xFFF9F7F3)),
                                   decoration: InputDecoration(
-                                    labelText:
-                                        _selectedRole == 'Food Establishment'
-                                            ? 'Establishment Type'
-                                            : 'Organization Type',
-                                    labelStyle: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
-                                    prefixIcon: const Icon(
-                                      Icons.category,
-                                      color: Color(0xFF39FF14),
-                                    ),
+                                    labelText: _selectedRole == 'Food Establishment' ? 'Establishment Type' : 'Organization Type',
+                                    labelStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
+                                    prefixIcon: const Icon(Icons.category, color: Color(0xFF39FF14)),
                                     filled: true,
                                     fillColor: const Color(0xFF2D2D2D),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFF39FF14),
-                                        width: 2,
-                                      ),
+                                      borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
                                     ),
                                   ),
                                   dropdownColor: const Color(0xFF2D2D2D),
-                                  items:
-                                      (_selectedRole == 'Food Establishment'
-                                              ? [
-                                                'Restaurant',
-                                                'Function Hall',
-                                                'Paying Guest (PG)',
-                                                'Other',
-                                              ]
-                                              : [
-                                                'NGO',
-                                                'Food Bank',
-                                                'Community Organization',
-                                                'Other',
-                                              ])
-                                          .map(
-                                            (type) => DropdownMenuItem(
-                                              value: type,
-                                              child: Text(
-                                                type,
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 16,
-                                                  color: const Color(
-                                                    0xFFF9F7F3,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                          .toList(),
+                                  items: (_selectedRole == 'Food Establishment'
+                                          ? ['Restaurant', 'Function Hall', 'Paying Guest (PG)', 'Other']
+                                          : ['NGO', 'Food Bank', 'Community Organization', 'Other'])
+                                      .map((type) => DropdownMenuItem(
+                                            value: type,
+                                            child: Text(type, style: GoogleFonts.inter(fontSize: 16, color: const Color(0xFFF9F7F3))),
+                                          ))
+                                      .toList(),
                                   onChanged: (value) {
                                     setState(() {
-                                      if (_selectedRole ==
-                                          'Food Establishment') {
+                                      if (_selectedRole == 'Food Establishment') {
                                         _establishmentType = value;
                                       } else {
                                         _orgType = value;
@@ -507,9 +409,7 @@ class _SignupScreenState extends State<SignupScreen>
                                     });
                                   },
                                   validator: (value) {
-                                    if (value == null) {
-                                      return 'Please select a type';
-                                    }
+                                    if (value == null) return 'Please select a type';
                                     return null;
                                   },
                                 ),
@@ -517,44 +417,23 @@ class _SignupScreenState extends State<SignupScreen>
                                 TextFormField(
                                   controller: _emailController,
                                   keyboardType: TextInputType.emailAddress,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color: const Color(0xFFF9F7F3),
-                                  ),
+                                  style: GoogleFonts.inter(fontSize: 16, color: const Color(0xFFF9F7F3)),
                                   decoration: InputDecoration(
                                     labelText: 'Email Address',
-                                    labelStyle: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
+                                    labelStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
                                     hintText: 'e.g., user@example.com',
-                                    hintStyle: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
-                                    prefixIcon: const Icon(
-                                      Icons.email,
-                                      color: Color(0xFF39FF14),
-                                    ),
+                                    hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
+                                    prefixIcon: const Icon(Icons.email, color: Color(0xFF39FF14)),
                                     filled: true,
                                     fillColor: const Color(0xFF2D2D2D),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFF39FF14),
-                                        width: 2,
-                                      ),
+                                      borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
                                     ),
                                   ),
                                   validator: (value) {
-                                    if (value == null ||
-                                        !EmailValidator.validate(value)) {
-                                      return 'Enter a valid email address';
-                                    }
+                                    if (value == null || !EmailValidator.validate(value)) return 'Enter a valid email address';
                                     return null;
                                   },
                                 ),
@@ -562,80 +441,42 @@ class _SignupScreenState extends State<SignupScreen>
                                 TextFormField(
                                   controller: _passwordController,
                                   obscureText: _obscurePassword,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color: const Color(0xFFF9F7F3),
-                                  ),
+                                  style: GoogleFonts.inter(fontSize: 16, color: const Color(0xFFF9F7F3)),
                                   decoration: InputDecoration(
                                     labelText: 'Password',
-                                    labelStyle: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
+                                    labelStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
                                     hintText: 'At least 8 characters',
-                                    hintStyle: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
-                                    prefixIcon: const Icon(
-                                      Icons.lock,
-                                      color: Color(0xFF39FF14),
-                                    ),
+                                    hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
+                                    prefixIcon: const Icon(Icons.lock, color: Color(0xFF39FF14)),
                                     suffixIcon: IconButton(
                                       icon: Icon(
-                                        _obscurePassword
-                                            ? Icons.visibility_off
-                                            : Icons.visibility,
+                                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
                                         color: const Color(0xFFB0B0B0),
                                       ),
-                                      onPressed: () {
-                                        setState(() {
-                                          _obscurePassword = !_obscurePassword;
-                                        });
-                                      },
+                                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                                     ),
                                     filled: true,
                                     fillColor: const Color(0xFF2D2D2D),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFF39FF14),
-                                        width: 2,
-                                      ),
+                                      borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
                                     ),
                                   ),
                                   validator: (value) {
-                                    if (value == null || value.length < 8) {
-                                      return 'Password must be at least 8 characters';
-                                    }
-                                    if (!value.contains(RegExp(r'[0-9]')) ||
-                                        !value.contains(
-                                          RegExp(r'[!@#$%^&*(),.?":{}|<>]'),
-                                        )) {
+                                    if (value == null || value.length < 8) return 'Password must be at least 8 characters';
+                                    if (!value.contains(RegExp(r'[0-9]')) || !value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]')))
                                       return 'Include a number and special character';
-                                    }
                                     return null;
                                   },
+                                  onChanged: (value) => setState(() {}),
                                 ),
                                 const SizedBox(height: 8),
                                 LinearProgressIndicator(
-                                  value: _getPasswordStrength(
-                                    _passwordController.text,
-                                  ),
-                                  backgroundColor: const Color(
-                                    0xFF2D2D2D,
-                                  ).withOpacity(0.5),
+                                  value: _getPasswordStrength(_passwordController.text),
+                                  backgroundColor: const Color(0xFF2D2D2D).withOpacity(0.5),
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    _getPasswordStrength(
-                                              _passwordController.text,
-                                            ) <
-                                            0.5
-                                        ? const Color(0xFFFF4A4A)
-                                        : const Color(0xFF39FF14),
+                                    _getPasswordStrength(_passwordController.text) < 0.5 ? const Color(0xFFFF4A4A) : const Color(0xFF39FF14),
                                   ),
                                   minHeight: 4,
                                   borderRadius: BorderRadius.circular(2),
@@ -644,101 +485,53 @@ class _SignupScreenState extends State<SignupScreen>
                                 TextFormField(
                                   controller: _confirmPasswordController,
                                   obscureText: _obscureConfirmPassword,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color: const Color(0xFFF9F7F3),
-                                  ),
+                                  style: GoogleFonts.inter(fontSize: 16, color: const Color(0xFFF9F7F3)),
                                   decoration: InputDecoration(
                                     labelText: 'Confirm Password',
-                                    labelStyle: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
+                                    labelStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
                                     hintText: 'Re-enter password',
-                                    hintStyle: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
-                                    prefixIcon: const Icon(
-                                      Icons.lock,
-                                      color: Color(0xFF39FF14),
-                                    ),
+                                    hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
+                                    prefixIcon: const Icon(Icons.lock, color: Color(0xFF39FF14)),
                                     suffixIcon: IconButton(
                                       icon: Icon(
-                                        _obscureConfirmPassword
-                                            ? Icons.visibility_off
-                                            : Icons.visibility,
+                                        _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
                                         color: const Color(0xFFB0B0B0),
                                       ),
-                                      onPressed: () {
-                                        setState(() {
-                                          _obscureConfirmPassword =
-                                              !_obscureConfirmPassword;
-                                        });
-                                      },
+                                      onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                                     ),
                                     filled: true,
                                     fillColor: const Color(0xFF2D2D2D),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFF39FF14),
-                                        width: 2,
-                                      ),
+                                      borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
                                     ),
                                   ),
                                   validator: (value) {
-                                    if (value == null ||
-                                        value != _passwordController.text) {
-                                      return 'Passwords do not match';
-                                    }
+                                    if (value == null || value != _passwordController.text) return 'Passwords do not match';
                                     return null;
                                   },
                                 ),
                                 const SizedBox(height: 16),
                                 TextFormField(
                                   controller: _addressController,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color: const Color(0xFFF9F7F3),
-                                  ),
+                                  style: GoogleFonts.inter(fontSize: 16, color: const Color(0xFFF9F7F3)),
                                   decoration: InputDecoration(
                                     labelText: 'Address',
-                                    labelStyle: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
+                                    labelStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
                                     hintText: 'Enter your address',
-                                    hintStyle: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
-                                    prefixIcon: const Icon(
-                                      Icons.location_on,
-                                      color: Color(0xFF39FF14),
-                                    ),
+                                    hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
+                                    prefixIcon: const Icon(Icons.location_on, color: Color(0xFF39FF14)),
                                     filled: true,
                                     fillColor: const Color(0xFF2D2D2D),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFF39FF14),
-                                        width: 2,
-                                      ),
+                                      borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
                                     ),
                                   ),
                                   validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Address is required';
-                                    }
+                                    if (value == null || value.trim().isEmpty) return 'Address is required';
                                     return null;
                                   },
                                 ),
@@ -746,62 +539,33 @@ class _SignupScreenState extends State<SignupScreen>
                                 TextFormField(
                                   controller: _contactController,
                                   keyboardType: TextInputType.phone,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color: const Color(0xFFF9F7F3),
-                                  ),
+                                  style: GoogleFonts.inter(fontSize: 16, color: const Color(0xFFF9F7F3)),
                                   decoration: InputDecoration(
                                     labelText: 'Contact Number',
-                                    labelStyle: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
+                                    labelStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
                                     hintText: 'e.g., 9876543210',
-                                    hintStyle: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: const Color(0xFFB0B0B0),
-                                    ),
+                                    hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
                                     prefixIcon: CountryCodePicker(
-                                      onChanged: (code) {
-                                        setState(() {
-                                          _countryCode = code;
-                                        });
-                                      },
+                                      onChanged: (code) => setState(() => _countryCode = code),
                                       initialSelection: 'IN',
                                       favorite: ['+91', 'IN'],
                                       showCountryOnly: false,
                                       alignLeft: false,
-                                      textStyle: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        color: const Color(0xFFF9F7F3),
-                                      ),
-                                      dialogBackgroundColor: const Color(
-                                        0xFF2D2D2D,
-                                      ),
+                                      textStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFF9F7F3)),
+                                      dialogBackgroundColor: const Color(0xFF2D2D2D),
+                                      dialogTextStyle: GoogleFonts.inter(color: const Color(0xFFF9F7F3)),
                                     ),
                                     filled: true,
                                     fillColor: const Color(0xFF2D2D2D),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(
-                                        color: Color(0xFF39FF14),
-                                        width: 2,
-                                      ),
+                                      borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
                                     ),
                                   ),
                                   validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Contact number is required';
-                                    }
-                                    if (!RegExp(
-                                      r'^\d{10}$',
-                                    ).hasMatch(value.trim())) {
-                                      return 'Enter a valid 10-digit number';
-                                    }
+                                    if (value == null || value.trim().isEmpty) return 'Contact number is required';
+                                    if (!RegExp(r'^\d{10}$').hasMatch(value.trim())) return 'Enter a valid 10-digit number';
                                     return null;
                                   },
                                 ),
@@ -814,25 +578,16 @@ class _SignupScreenState extends State<SignupScreen>
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF39FF14),
                                       foregroundColor: const Color(0xFF1A3C34),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       elevation: 0,
                                       shadowColor: Colors.transparent,
-                                      splashFactory: InkRipple.splashFactory,
                                     ),
-                                    child:
-                                        _isLoading
-                                            ? const CircularProgressIndicator(
-                                              color: Color(0xFF1A3C34),
-                                            )
-                                            : Text(
-                                              'Sign Up',
-                                              style: GoogleFonts.inter(
-                                                fontWeight: FontWeight.w700,
-                                                fontSize: 16,
-                                              ),
-                                            ),
+                                    child: _isLoading
+                                        ? const CircularProgressIndicator(color: Color(0xFF1A3C34))
+                                        : Text(
+                                            'Sign Up',
+                                            style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+                                          ),
                                   ),
                                 ),
                               ],
@@ -844,10 +599,7 @@ class _SignupScreenState extends State<SignupScreen>
                       Text.rich(
                         TextSpan(
                           text: 'Already have an account? ',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: const Color(0xFFB0B0B0),
-                          ),
+                          style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
                           children: [
                             TextSpan(
                               text: 'Log In',
@@ -856,17 +608,11 @@ class _SignupScreenState extends State<SignupScreen>
                                 color: const Color(0xFF39FF14),
                                 decoration: TextDecoration.underline,
                               ),
-                              recognizer:
-                                  TapGestureRecognizer()
-                                    ..onTap =
-                                        () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (context) =>
-                                                    const LoginScreen(),
-                                          ),
-                                        ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () => Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                    ),
                             ),
                           ],
                         ),
@@ -879,13 +625,6 @@ class _SignupScreenState extends State<SignupScreen>
               ),
             ],
           ),
-          if (_isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.6),
-              child: const Center(
-                child: CircularProgressIndicator(color: Color(0xFF39FF14)),
-              ),
-            ),
         ],
       ),
     );

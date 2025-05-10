@@ -5,11 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:intl/intl.dart';
 import 'package:renosh_app/screens/auth_screen/login_screen.dart';
-import 'package:renosh_app/screens/food_track_screen.dart';
-import 'package:renosh_app/screens/history_screen.dart';
-import 'package:renosh_app/screens/profile_screen.dart';
 import 'package:renosh_app/screens/surplus_details_screen.dart';
 
 class EstablishmentDashboard extends StatefulWidget {
@@ -35,10 +31,9 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
+    );
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
@@ -68,11 +63,10 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final doc =
-            await FirebaseFirestore.instance
-                .collection('users')
-                .doc(user.uid)
-                .get();
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
         if (doc.exists && doc.data()!['role'] == 'Food Establishment') {
           setState(() {
             _establishmentName = doc.data()!['name'];
@@ -81,11 +75,12 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
         } else {
           _showErrorSnackBar('Invalid role or user data.');
           await FirebaseAuth.instance.signOut();
-          if (mounted)
-            Navigator.push(
+          if (mounted) {
+            Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => LoginScreen()),
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
             );
+          }
         }
       } else {
         _showErrorSnackBar('User not authenticated.');
@@ -445,15 +440,13 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
               color: const Color(0xFFF9F7F3),
             ),
           ),
-          // Reduced the SizedBox height here, or you can remove it entirely if needed.
-          const SizedBox(height: 4), // Set this to the smallest value
+          const SizedBox(height: 4),
           StreamBuilder<QuerySnapshot>(
-            stream:
-                FirebaseFirestore.instance
-                    .collection('food_tracking')
-                    .where('establishmentId', isEqualTo: user.uid)
-                    .where('quantity_surplus', isGreaterThan: 0)
-                    .snapshots(),
+            stream: FirebaseFirestore.instance
+                .collection('food_tracking')
+                .where('establishmentId', isEqualTo: user.uid)
+                .where('quantity_surplus', isGreaterThan: 0)
+                .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
@@ -545,12 +538,11 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder:
-                              (context) => SurplusDetailsScreen(
-                                itemName: item,
-                                quantity: quantity,
-                                docId: doc.id,
-                              ), // Replace with your new screen
+                          builder: (context) => SurplusDetailsScreen(
+                            itemName: item,
+                            quantity: quantity,
+                            docId: doc.id,
+                          ),
                         ),
                       );
                     },
@@ -631,119 +623,6 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
     );
   }
 
-  Widget _buildBottomNavBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2D2D2D).withOpacity(0.9),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(
-            'Home',
-            Icons.home,
-            true,
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => EstablishmentDashboard()),
-            ),
-          ),
-          _buildNavItem(
-            'Food Track',
-            Icons.inventory,
-            false,
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => FoodTrackScreen()),
-            ),
-          ),
-          _buildNavItem(
-            'History',
-            Icons.history,
-            false,
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const HistoryScreen()),
-            ),
-          ),
-          _buildNavItem(
-            'Profile',
-            Icons.person,
-            false,
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ProfileScreen()),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem(
-    String title,
-    IconData icon,
-    bool isActive,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color:
-              isActive
-                  ? const Color(0xFF39FF14).withOpacity(0.2)
-                  : Colors.transparent,
-          boxShadow:
-              isActive
-                  ? [
-                    BoxShadow(
-                      color: const Color(0xFF39FF14).withOpacity(0.3),
-                      blurRadius: 8,
-                    ),
-                  ]
-                  : [],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 24,
-              color:
-                  isActive ? const Color(0xFF39FF14) : const Color(0xFFB0B0B0),
-            ),
-            Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color:
-                    isActive
-                        ? const Color(0xFF39FF14)
-                        : const Color(0xFFB0B0B0),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -764,68 +643,61 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
           ),
           _isLoading
               ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFF39FF14)),
-              )
-              : Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 32,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  child: CircularProgressIndicator(color: Color(0xFF39FF14)),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 32,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 32),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const SizedBox(height: 32),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              ScaleTransition(
-                                scale: _scaleAnimation,
-                                child: Image.asset(
-                                  'assets/logo.jpg',
-                                  width: 80,
-                                  height: 80,
-                                  semanticLabel: 'ReNosh Logo',
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          FadeTransition(
-                            opacity: _fadeAnimation,
-                            child: Text(
-                              '$_greeting, ${_establishmentName ?? 'Loading...'}!',
-                              style: GoogleFonts.inter(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w900,
-                                color: const Color(0xFFF9F7F3),
-                              ),
+                          ScaleTransition(
+                            scale: _scaleAnimation,
+                            child: Image.asset(
+                              'assets/logo.jpg',
+                              width: 80,
+                              height: 80,
+                              semanticLabel: 'ReNosh Logo',
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Manage your surplus and track sustainability',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                              color: const Color(0xFFB0B0B0),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          _buildAIInsightsCard(),
-                          const SizedBox(height: 24),
-                          _buildSustainabilityCharts(),
-                          const SizedBox(height: 24),
-                          _buildSurplusItems(),
                         ],
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: Text(
+                          '$_greeting, ${_establishmentName ?? 'Loading...'}!',
+                          style: GoogleFonts.inter(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFFF9F7F3),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Manage your surplus and track sustainability',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFFB0B0B0),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildAIInsightsCard(),
+                      const SizedBox(height: 24),
+                      _buildSustainabilityCharts(),
+                      const SizedBox(height: 24),
+                      _buildSurplusItems(),
+                    ],
                   ),
-                  _buildBottomNavBar(),
-                ],
-              ),
+                ),
         ],
       ),
     );
