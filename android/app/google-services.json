@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "728682411782",
-    "project_id": "renosh-acb80",
-    "storage_bucket": "renosh-acb80.firebasestorage.app"
+    "project_number": "62125287537",
+    "project_id": "renosh-4569b",
+    "storage_bucket": "renosh-4569b.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:728682411782:android:119f6a2a23d168624f1087",
+        "mobilesdk_app_id": "1:62125287537:android:2172da0e66acf3136ed3d0",
         "android_client_info": {
           "package_name": "com.example.renosh_app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCmAj4z_c11wZpFGTDH0Qez2kAzLNvedJw"
+          "current_key": "AIzaSyD56pB08vR0v-52QFwa-O_BeK_5Q2QFeto"
         }
       ],
       "services": {
