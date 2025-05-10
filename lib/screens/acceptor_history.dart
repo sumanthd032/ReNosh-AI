@@ -7,6 +7,141 @@ import 'package:intl/intl.dart';
 class AcceptorHistory extends StatelessWidget {
   const AcceptorHistory({super.key});
 
+  void _showDonorDetailsDialog(
+    BuildContext context, {
+    required String donorName,
+    required String phoneNumber,
+    required String address,
+  }) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.center,
+                  radius: 1.5,
+                  colors: [
+                    const Color(0xFF1A3C34).withOpacity(0.95),
+                    const Color(0xFF2D2D2D).withOpacity(0.85),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Donor Details',
+                    style: GoogleFonts.inter(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF39FF14),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Donor: $donorName',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFFF9F7F3),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Phone: $phoneNumber',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFFF9F7F3),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Address: $address',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: const Color(0xFFF9F7F3),
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: const Color(0xFF1A3C34),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.location_on,
+                            color: Color(0xFF39FF14),
+                            size: 28,
+                          ),
+                          onPressed: () {
+                            debugPrint(
+                              'Location icon tapped for address: $address',
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        debugPrint('Closed donor details dialog');
+                        Navigator.of(context).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF39FF14),
+                        foregroundColor: const Color(0xFF1A3C34),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: Text(
+                        'Close',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -203,106 +338,94 @@ class AcceptorHistory extends StatelessWidget {
                                 );
                               }
 
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 16),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF2D2D2D),
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
-                                      blurRadius: 10,
-                                      offset: const Offset(4, 4),
-                                    ),
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFFF9F7F3,
-                                      ).withOpacity(0.05),
-                                      blurRadius: 10,
-                                      offset: const Offset(-4, -4),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      itemName,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFFF9F7F3),
+                              return GestureDetector(
+                                onTap: () {
+                                  debugPrint(
+                                    'Tapped donation ${doc.id}: claimStatus=$claimStatus',
+                                  );
+                                  if (claimStatus == 'accepted') {
+                                    _showDonorDetailsDialog(
+                                      context,
+                                      donorName: donorName,
+                                      phoneNumber: phoneNumber,
+                                      address: address,
+                                    );
+                                  }
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF2D2D2D),
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 10,
+                                        offset: const Offset(4, 4),
                                       ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Quantity: $quantity',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        color: const Color(0xFFB0B0B0),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Posted: ${DateFormat('MMM dd, yyyy – HH:mm').format(timestamp)}',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: const Color(0xFFB0B0B0),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Pickup Time: $pickupTime',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: const Color(0xFFB0B0B0),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Claim Status: ${claimStatus[0].toUpperCase()}${claimStatus.substring(1)}',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color:
-                                            claimStatus == 'accepted'
-                                                ? const Color(0xFF39FF14)
-                                                : claimStatus == 'rejected'
-                                                ? const Color(0xFFFF4A4A)
-                                                : const Color(0xFFB0B0B0),
-                                      ),
-                                    ),
-                                    if (claimStatus == 'accepted') ...[
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Donor: $donorName',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          color: const Color(0xFFF9F7F3),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Phone: $phoneNumber',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          color: const Color(0xFFF9F7F3),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Address: $address',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          color: const Color(0xFFF9F7F3),
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFFF9F7F3,
+                                        ).withOpacity(0.05),
+                                        blurRadius: 10,
+                                        offset: const Offset(-4, -4),
                                       ),
                                     ],
-                                  ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        itemName,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xFFF9F7F3),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Quantity: $quantity',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          color: const Color(0xFFB0B0B0),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Posted: ${DateFormat('MMM dd, yyyy – HH:mm').format(timestamp)}',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: const Color(0xFFB0B0B0),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Pickup Time: $pickupTime',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: const Color(0xFFB0B0B0),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Claim Status: ${claimStatus[0].toUpperCase()}${claimStatus.substring(1)}',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color:
+                                              claimStatus == 'accepted'
+                                                  ? const Color(0xFF39FF14)
+                                                  : claimStatus == 'rejected'
+                                                  ? const Color(0xFFFF4A4A)
+                                                  : const Color(0xFFB0B0B0),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               );
                             },
