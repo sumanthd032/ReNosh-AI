@@ -11,7 +11,10 @@ class AcceptorHistory extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Acceptor History',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: const Color(0xFFF9F7F3)),
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFFF9F7F3),
+          ),
         ),
         backgroundColor: const Color(0xFF2D2D2D),
       ),

@@ -13,44 +13,7 @@ class HistoryScreen extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF1A3C34),
-        body: Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 1.5,
-                  colors: [
-                    const Color(0xFF1A3C34).withOpacity(0.95),
-                    const Color(0xFF2D2D2D).withOpacity(0.85),
-                  ],
-                ),
-              ),
-            ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'Please log in to view donation history.',
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFFF9F7F3),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: const Color(0xFF1A3C34),
-      body: Stack(
+      return Stack(
         children: [
           Container(
             decoration: BoxDecoration(
@@ -63,19 +26,50 @@ class HistoryScreen extends StatelessWidget {
                 ],
               ),
             ),
+            child: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'Please log in to view donation history.',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFF9F7F3),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
           ),
-          RefreshIndicator(
+        ],
+      );
+    }
+
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment.center,
+              radius: 1.5,
+              colors: [
+                const Color(0xFF1A3C34).withOpacity(0.95),
+                const Color(0xFF2D2D2D).withOpacity(0.85),
+              ],
+            ),
+          ),
+        ),
+        SafeArea(
+          child: RefreshIndicator(
             color: const Color(0xFF39FF14),
             backgroundColor: const Color(0xFF2D2D2D),
             onRefresh: () async {
-              // Trigger a rebuild by awaiting a small delay
               await Future.delayed(const Duration(milliseconds: 500));
             },
             child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: MediaQuery.of(context).padding.top + 16,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -98,19 +92,24 @@ class HistoryScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('donations')
-                        .where('establishmentId', isEqualTo: user.uid)
-                        .orderBy('createdAt', descending: true)
-                        .snapshots(),
+                    stream:
+                        FirebaseFirestore.instance
+                            .collection('donations')
+                            .where('establishmentId', isEqualTo: user.uid)
+                            .orderBy('createdAt', descending: true)
+                            .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(
-                          child: CircularProgressIndicator(color: Color(0xFF39FF14)),
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF39FF14),
+                          ),
                         );
                       }
                       if (snapshot.hasError) {
-                        debugPrint('Error in donations query: ${snapshot.error}');
+                        debugPrint(
+                          'Error in donations query: ${snapshot.error}',
+                        );
                         return Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -119,7 +118,11 @@ class HistoryScreen extends StatelessWidget {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.error_outline, color: Color(0xFFFF4A4A), size: 20),
+                              const Icon(
+                                Icons.error_outline,
+                                color: Color(0xFFFF4A4A),
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -132,9 +135,11 @@ class HistoryScreen extends StatelessWidget {
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.refresh, color: Color(0xFF39FF14)),
+                                icon: const Icon(
+                                  Icons.refresh,
+                                  color: Color(0xFF39FF14),
+                                ),
                                 onPressed: () {
-                                  // Trigger rebuild
                                   (context as Element).markNeedsBuild();
                                 },
                               ),
@@ -152,7 +157,11 @@ class HistoryScreen extends StatelessWidget {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.info_outline, color: Color(0xFFB0B0B0), size: 20),
+                              const Icon(
+                                Icons.info_outline,
+                                color: Color(0xFFB0B0B0),
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -169,19 +178,29 @@ class HistoryScreen extends StatelessWidget {
                         );
                       }
 
-                      debugPrint('Found ${snapshot.data!.docs.length} donations');
+                      debugPrint(
+                        'Found ${snapshot.data!.docs.length} donations',
+                      );
                       return ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: snapshot.data!.docs.length,
                         itemBuilder: (context, index) {
                           final doc = snapshot.data!.docs[index];
-                          final itemName = doc['item_name'] as String;
-                          final quantity = doc['quantity'] as int;
-                          final timestamp = (doc['createdAt'] as Timestamp).toDate();
-                          final formattedDate = DateFormat('MMM dd, yyyy – HH:mm').format(timestamp);
-                          final pickupTime = doc['pickupTime'] as String;
-                          final status = (doc['status'] as String).toLowerCase(); // Standardize case
+                          final data = doc.data() as Map<String, dynamic>;
+                          final itemName = data['item_name'] as String;
+                          final quantity = data['quantity'] as int;
+                          final timestamp =
+                              (data['createdAt'] as Timestamp).toDate();
+                          final formattedDate = DateFormat(
+                            'MMM dd, yyyy – HH:mm',
+                          ).format(timestamp);
+                          final pickupTime = data['pickupTime'] as String;
+                          final status = (data['status'] as String);
+                          final acceptorId =
+                              data.containsKey('acceptorId')
+                                  ? data['acceptorId']
+                                  : null;
 
                           return GestureDetector(
                             onTap: () {
@@ -192,7 +211,9 @@ class HistoryScreen extends StatelessWidget {
                               margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF2D2D2D).withOpacity(0.85),
+                                color: const Color(
+                                  0xFF2D2D2D,
+                                ).withOpacity(0.85),
                                 borderRadius: BorderRadius.circular(14),
                                 boxShadow: [
                                   BoxShadow(
@@ -201,19 +222,27 @@ class HistoryScreen extends StatelessWidget {
                                     offset: const Offset(0, 2),
                                   ),
                                   BoxShadow(
-                                    color: const Color(0xFF39FF14).withOpacity(0.05),
+                                    color: const Color(
+                                      0xFF39FF14,
+                                    ).withOpacity(0.05),
                                     blurRadius: 4,
                                     spreadRadius: 0,
                                   ),
                                 ],
-                                border: Border.all(color: const Color(0xFF39FF14).withOpacity(0.1)),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xFF39FF14,
+                                  ).withOpacity(0.1),
+                                ),
                               ),
                               child: Row(
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF39FF14).withOpacity(0.15),
+                                      color: const Color(
+                                        0xFF39FF14,
+                                      ).withOpacity(0.15),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(
@@ -225,7 +254,8 @@ class HistoryScreen extends StatelessWidget {
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           itemName,
@@ -265,15 +295,27 @@ class HistoryScreen extends StatelessWidget {
                                         ),
                                         const SizedBox(height: 3),
                                         Text(
-                                          'Status: ${status[0].toUpperCase()}${status.substring(1)}',
+                                          'Status: $status',
                                           style: GoogleFonts.inter(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w400,
-                                            color: status == 'available'
-                                                ? const Color(0xFF39FF14)
-                                                : const Color(0xFFB0B0B0),
+                                            color:
+                                                status == 'Available'
+                                                    ? const Color(0xFF39FF14)
+                                                    : const Color(0xFFB0B0B0),
                                           ),
                                         ),
+                                        if (acceptorId != null) ...[
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            'Claimed by: Acceptor',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w400,
+                                              color: const Color(0xFFB0B0B0),
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                     ),
                                   ),
@@ -289,8 +331,8 @@ class HistoryScreen extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
