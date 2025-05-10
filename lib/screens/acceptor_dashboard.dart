@@ -13,7 +13,6 @@ class AcceptorDashboard extends StatefulWidget {
 
 class _AcceptorDashboardState extends State<AcceptorDashboard> {
   String _getGreeting() {
-    // Use local time adjusted for UTC+5:30
     final now = DateTime.now().toUtc().add(
       const Duration(hours: 5, minutes: 30),
     );
@@ -63,11 +62,15 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
             'status': 'Claimed',
             'acceptorId': user.uid,
             'claimedAt': Timestamp.now(),
+            'claimStatus': 'pending',
           });
-      _showSnackBar('Successfully claimed $itemName');
+      debugPrint(
+        'Claim requested for donation $docId by user ${user.uid}: status=Claimed, claimStatus=pending',
+      );
+      _showSnackBar('Claim requested for $itemName. Awaiting seller approval.');
     } catch (e) {
       debugPrint('Error claiming donation: $e');
-      _showSnackBar('Failed to claim donation', isError: true);
+      _showSnackBar('Failed to request claim: $e', isError: true);
     }
   }
 
@@ -331,7 +334,7 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                                         ),
                                       ),
                                       child: Text(
-                                        'Claim',
+                                        'Request Claim',
                                         style: GoogleFonts.inter(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
