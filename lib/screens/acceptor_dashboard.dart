@@ -2,7 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
+import 'dart:math';
+
+double calculateDistance(LatLng point1, LatLng point2) {
+  const double earthRadius = 6371; // km
+  double lat1 = point1.latitude * pi / 180;
+  double lat2 = point2.latitude * pi / 180;
+  double deltaLat = (point2.latitude - point1.latitude) * pi / 180;
+  double deltaLon = (point2.longitude - point1.longitude) * pi / 180;
+
+  double a =
+      sin(deltaLat / 2) * sin(deltaLat / 2) +
+      cos(lat1) * cos(lat2) * sin(deltaLon / 2) * sin(deltaLon / 2);
+  double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+  return earthRadius * c; // Distance in km
+}
 
 class AcceptorDashboard extends StatefulWidget {
   const AcceptorDashboard({super.key});
