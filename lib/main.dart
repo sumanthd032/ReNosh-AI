@@ -11,7 +11,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('Firebase initialized successfully');
   } catch (e) {
     debugPrint('Firebase initialization failed: $e');
   }
@@ -21,50 +24,82 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  Future<Widget> _getHomeScreen(BuildContext context) async {
-    final user = FirebaseAuth.instance.currentUser;
-    debugPrint('Current user: ${user?.uid ?? 'null'}, email: ${user?.email ?? 'null'}');
+  Widget _buildHomeScreen(User? user) {
     if (user == null) {
-      debugPrint('No authenticated user. Redirecting to LoginScreen.');
+      debugPrint('No authenticated user. Showing LoginScreen.');
       return const LoginScreen();
     }
 
-    try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      debugPrint('User document exists: ${doc.exists}, data: ${doc.data()}');
-      if (!doc.exists) {
-        debugPrint('User document not found. Signing out.');
-        await FirebaseAuth.instance.signOut();
-        return const LoginScreenWithError(error: 'User profile not found. Please sign up or log in again.');
-      }
+    return StreamBuilder<DocumentSnapshot>(
+      stream:
+          FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          debugPrint('Waiting for user document for UID: ${user.uid}');
+          return const Scaffold(
+            backgroundColor: Color(0xFF1A3C34),
+            body: Center(
+              child: CircularProgressIndicator(color: Color(0xFF39FF14)),
+            ),
+          );
+        }
 
-      final data = doc.data();
-      if (data == null) {
-        debugPrint('User document is empty. Signing out.');
-        await FirebaseAuth.instance.signOut();
-        return const LoginScreenWithError(error: 'User profile data is empty. Please sign up again.');
-      }
+        if (snapshot.hasError) {
+          debugPrint('Error fetching user document: ${snapshot.error}');
+          FirebaseAuth.instance.signOut(); // Sign out on error
+          return const LoginScreenWithError(
+            error: 'Failed to load user data. Please try again.',
+          );
+        }
 
-      final role = data['role'] as String?;
-      debugPrint('User role: ${role ?? 'none'}');
-      if (role == null || !['Food Establishment', 'Acceptor'].contains(role)) {
-        debugPrint('Invalid or missing role: $role. Signing out.');
-        await FirebaseAuth.instance.signOut();
-        return const LoginScreenWithError(error: 'Invalid role. Please contact support.');
-      }
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          debugPrint(
+            'User document not found for UID: ${user.uid}. Signing out.',
+          );
+          FirebaseAuth.instance.signOut();
+          return const LoginScreenWithError(
+            error: 'User profile not found. Please sign up or log in again.',
+          );
+        }
 
-      if (role == 'Food Establishment') {
-        debugPrint('Routing to MainScreenEstablishment.');
-        return const MainScreenEstablishment();
-      } else {
-        debugPrint('Acceptor role detected. Routing to MainScreenAcceptor.');
-        return const MainScreenAcceptor();
-      }
-    } catch (e) {
-      debugPrint('Error fetching user role: $e');
-      await FirebaseAuth.instance.signOut();
-      return LoginScreenWithError(error: 'Failed to load user data: ${e.toString().split('] ').last}. Please try again.');
-    }
+        final data = snapshot.data!.data() as Map<String, dynamic>?;
+        if (data == null) {
+          debugPrint(
+            'User document is empty for UID: ${user.uid}. Signing out.',
+          );
+          FirebaseAuth.instance.signOut();
+          return const LoginScreenWithError(
+            error: 'User profile data is empty. Please sign up again.',
+          );
+        }
+
+        final role = data['role'] as String?;
+        debugPrint(
+          'User role: ${role ?? 'none'} for UID: ${user.uid}, email: ${user.email}',
+        );
+        if (role == null ||
+            !['Food Establishment', 'Acceptor'].contains(role)) {
+          debugPrint('Invalid or missing role: $role. Signing out.');
+          FirebaseAuth.instance.signOut();
+          return const LoginScreenWithError(
+            error: 'Invalid role. Please contact support.',
+          );
+        }
+
+        if (role == 'Food Establishment') {
+          debugPrint('Routing to MainScreenEstablishment for UID: ${user.uid}');
+          return const MainScreenEstablishment();
+        } else {
+          debugPrint(
+            'Acceptor role detected. Routing to MainScreenAcceptor for UID: ${user.uid}',
+          );
+          return const MainScreenAcceptor();
+        }
+      },
+    );
   }
 
   @override
@@ -95,46 +130,80 @@ class MyApp extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF39FF14),
             foregroundColor: const Color(0xFF1A3C34),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: GoogleFonts.inter(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: const Color(0xFF3A3A3A),
-          labelStyle: GoogleFonts.inter(color: const Color(0xFFB0B0B0), fontSize: 14),
-          hintStyle: GoogleFonts.inter(color: const Color(0xFFB0B0B0), fontSize: 14),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          labelStyle: GoogleFonts.inter(
+            color: const Color(0xFFB0B0B0),
+            fontSize: 14,
+          ),
+          hintStyle: GoogleFonts.inter(
+            color: const Color(0xFFB0B0B0),
+            fontSize: 14,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
           ),
-          errorStyle: GoogleFonts.inter(fontSize: 12, color: Color(0xFFFF4A4A), height: 1.2),
-          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          errorStyle: GoogleFonts.inter(
+            fontSize: 12,
+            color: Color(0xFFFF4A4A),
+            height: 1.2,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 16,
+            horizontal: 16,
+          ),
         ),
         snackBarTheme: SnackBarThemeData(
           backgroundColor: const Color(0xFF2D2D2D),
-          contentTextStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFF9F7F3)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          contentTextStyle: GoogleFonts.inter(
+            fontSize: 14,
+            color: const Color(0xFFF9F7F3),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           behavior: SnackBarBehavior.floating,
           insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ),
       ),
-      home: FutureBuilder<Widget>(
-        future: _getHomeScreen(context),
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
+            debugPrint('Waiting for auth state');
             return const Scaffold(
               backgroundColor: Color(0xFF1A3C34),
-              body: Center(child: CircularProgressIndicator(color: Color(0xFF39FF14))),
+              body: Center(
+                child: CircularProgressIndicator(color: Color(0xFF39FF14)),
+              ),
             );
           }
           if (snapshot.hasError) {
-            debugPrint('FutureBuilder error: ${snapshot.error}');
-            return const LoginScreenWithError(error: 'Error loading app. Please try again.');
+            debugPrint('Auth state error: ${snapshot.error}');
+            return const LoginScreenWithError(
+              error: 'Authentication error. Please try again.',
+            );
           }
-          return snapshot.data ?? const LoginScreen();
+          debugPrint(
+            'Auth state received: User ${snapshot.data?.uid ?? 'null'}',
+          );
+          return _buildHomeScreen(snapshot.data);
         },
       ),
     );
@@ -153,12 +222,17 @@ class LoginScreenWithError extends StatelessWidget {
           SnackBar(
             content: Text(
               error,
-              style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFF9F7F3)),
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: const Color(0xFFF9F7F3),
+              ),
             ),
             backgroundColor: const Color(0xFFFF4A4A),
             duration: const Duration(seconds: 5),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
         );
