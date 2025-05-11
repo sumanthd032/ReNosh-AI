@@ -12,9 +12,10 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io' show HttpException, Platform, SocketException;
 import 'package:flutter/foundation.dart' show compute;
+import 'package:connectivity_plus/connectivity_plus.dart'; // For network checks
 
 class Constants {
-  static const String apiBaseUrl = 'https://renosh-api.onrender.com';
+  // Removed apiBaseUrl to ensure only Gemini and Firestore are used
   static const Map<String, int> defaultPredictions = {
     'Butter Chicken': 120,
     'Paneer Tikka': 150,
@@ -56,6 +57,7 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
   List<String> _aiInsights = [];
   bool _isFetchingInsights = false;
   List<Map<String, dynamic>> _sustainabilityData = [];
+  bool _forceRefresh = false;
 
   @override
   void initState() {
@@ -129,6 +131,18 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
     }
   }
 
+  Future<void> _clearCacheForDate(String targetDate) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('predictions_date_$targetDate');
+    await prefs.remove('predictions_data_$targetDate');
+    debugPrint('Cleared cache for $targetDate');
+  }
+
+  Future<bool> _checkConnectivity() async {
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    return connectivityResult != ConnectivityResult.none;
+  }
+
   Future<void> _fetchUserData() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -141,6 +155,7 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
         return;
       }
 
+      // Using Firestore to fetch user data
       final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -177,6 +192,7 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
     try {
       final now = DateTime.now();
       final startDate = now.subtract(Duration(days: 7));
+      // Using Firestore to fetch sustainability metrics
       final querySnapshot = await FirebaseFirestore.instance
           .collection('sustainability_metrics')
           .where('date',
@@ -240,7 +256,7 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
         throw Exception('User not authenticated');
       }
 
-      // Fetch food tracking data
+      // Using Firestore to fetch food tracking data
       final foodTrackingSnapshot = await FirebaseFirestore.instance
           .collection('food_tracking')
           .where('establishmentId', isEqualTo: user.uid)
@@ -265,7 +281,7 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
         });
       }
 
-      // Fetch donation data
+      // Using Firestore to fetch donation data
       final donationSnapshot = await FirebaseFirestore.instance
           .collection('donation')
           .where('establishmentId', isEqualTo: user.uid)
@@ -282,7 +298,6 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
               })
           .toList();
 
-      // Get yesterday's data
       final yesterday = now.subtract(Duration(days: 1)).toIso8601String().split('T')[0];
       final yesterdayData = historicalFoodData[yesterday] ?? [];
       Map<String, dynamic> yesterdayProduction = {
@@ -294,7 +309,7 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
           }
       };
 
-      // Get surplus count
+      // Using Firestore to fetch surplus count
       final surplusSnapshot = await FirebaseFirestore.instance
           .collection('food_tracking')
           .where('establishmentId', isEqualTo: user.uid)
@@ -302,13 +317,18 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
           .get();
       final surplusCount = surplusSnapshot.docs.length;
 
-      // Get establishment details
+      // Using Firestore to fetch establishment details
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
       final establishmentType = userDoc.data()?['type'] ?? 'Restaurant';
       final establishmentAddress = userDoc.data()?['address'] ?? 'Unknown';
+
+      debugPrint('Historical Food Data: ${jsonEncode(historicalFoodData)}');
+      debugPrint('Historical Donation Data: ${jsonEncode(historicalDonationData)}');
+      debugPrint('Yesterday Data: ${jsonEncode(yesterdayProduction)}');
+      debugPrint('Surplus Count: $surplusCount');
 
       return {
         'historical_food_data': historicalFoodData,
@@ -334,15 +354,20 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
   Future<void> _fetchAIInsights() async {
     setState(() {
       _isFetchingInsights = true;
+      _aiInsights = [];
     });
 
     try {
+      // Check network connectivity before Gemini API call
+      if (!await _checkConnectivity()) {
+        throw SocketException('No internet connection');
+      }
+
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         throw Exception('User not authenticated');
       }
 
-      // Fetch historical data
       final historicalData = await _fetchHistoricalData();
       final now = DateTime.now();
       final dateFormatter = DateFormat('MMMM d, yyyy');
@@ -350,7 +375,6 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
       final todayDate = dateFormatter.format(now);
       final todayDay = dayFormatter.format(now);
 
-      // Prepare prompt data
       final promptData = {
         'today_date': '$todayDate ($todayDay)',
         'historical_food_data': historicalData['historical_food_data'],
@@ -359,11 +383,12 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
         'yesterday_data': historicalData['yesterday_data'],
         'establishment_type': historicalData['establishment_type'],
         'establishment_address': historicalData['establishment_address'],
+        'request_timestamp': now.toIso8601String(),
       };
 
-      // Construct the prompt
+      // Prompt for Gemini API to generate insights
       final prompt = '''
-You are an AI assistant for a food establishment on the ReNosh platform, focused on managing food surplus and sustainability. Using the provided data, generate 3-4 concise, actionable insights (each <25 words) to optimize food preparation, reduce waste, and manage surplus effectively. Format each insight as: "- [Insight]". Insights must be specific, data-driven, and consider the date context (${promptData['today_date']}, likely high demand if weekend).
+You are an AI assistant for a food establishment on the ReNosh platform, focused on optimizing food surplus and sustainability. Using the provided data, generate 3-4 concise, actionable insights (each <25 words) to optimize food preparation, reduce waste, and manage surplus effectively. Format each insight as: "- [Insight]". Insights must be specific, data-driven, and consider the date context (${promptData['today_date']}, higher demand on weekends), recent donation patterns, and surplus trends.
 
 Data:
 - Today's date: ${promptData['today_date']}
@@ -373,16 +398,18 @@ Data:
 - Yesterday's production and sales: ${jsonEncode(promptData['yesterday_data'])}
 - Establishment type: ${promptData['establishment_type']}
 - Location: ${promptData['establishment_address']}
+- Request timestamp: ${promptData['request_timestamp']}
 
 Example insights:
-- Increase Gobi production by 10% for weekend demand.
+- Increase Gobi production by 10% due to high weekend demand.
 - Donate 5 surplus Paneer Tikka portions to minimize waste.
 - Reduce Dal Makhani preparation by 5% to avoid surplus.
-- Promote Naan with a combo offer to boost sales.
+- Promote Naan with a weekend combo to boost sales.
 ''';
 
-      const apiKey = 'AIzaSyCVCLMbR7-9F_jI3Byk_0az0nDFOPerPmQ'; // Replace with your actual Gemini API key
-      if (apiKey.isEmpty || apiKey == 'AIzaSyCVCLMbR7-9F_jI3Byk_0az0nDFOPerPmQ') {
+      // Using Gemini API for insights
+      const apiKey = 'AIzaSyCVCLMbR7-9F_jI3Byk_0az0nDFOPerPmQ'; // TODO: Replace with actual key
+      if (apiKey.isEmpty || apiKey == 'YOUR_VALID_GEMINI_API_KEY') {
         throw Exception('Gemini API key not configured');
       }
 
@@ -401,7 +428,7 @@ Example insights:
                 }
               ],
               'generationConfig': {
-                'temperature': 0.7,
+                'temperature': 0.9,
                 'maxOutputTokens': 200,
               },
             }),
@@ -410,7 +437,12 @@ Example insights:
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final text = data['candidates'][0]['content']['parts'][0]['text'] as String;
+        final text = data['candidates']?[0]['content']['parts'][0]['text'] as String?;
+        debugPrint('AI Insights Response: $text');
+        if (text == null || text.isEmpty) {
+          throw Exception('Empty response from Gemini API');
+        }
+
         final insights = text
             .split('\n')
             .where((line) => line.trim().startsWith('- '))
@@ -428,11 +460,13 @@ Example insights:
           _isFetchingInsights = false;
         });
       } else {
+        debugPrint('Gemini API error: Status ${response.statusCode}, Body: ${response.body}');
         throw HttpException(
             'Gemini API returned status code ${response.statusCode}: ${response.body}');
       }
-    } on TimeoutException {
-      debugPrint('Gemini API timed out');
+    } on TimeoutException catch (e) {
+      debugPrint('Gemini API timed out: $e');
+      _showErrorSnackBar('AI insights request timed out. Using default insights.');
       setState(() {
         _aiInsights = [
           'Optimize inventory based on recent trends.',
@@ -440,9 +474,11 @@ Example insights:
           'Adjust preparation for high-demand items.',
         ];
         _isFetchingInsights = false;
+        _isOffline = true;
       });
-    } on SocketException {
-      debugPrint('No internet connection for Gemini API');
+    } on SocketException catch (e) {
+      debugPrint('No internet connection for Gemini API: $e');
+      _showErrorSnackBar('No internet connection. Using default insights.');
       setState(() {
         _aiInsights = [
           'Optimize inventory based on recent trends.',
@@ -453,7 +489,8 @@ Example insights:
         _isOffline = true;
       });
     } on HttpException catch (e) {
-      debugPrint('Gemini API error: $e');
+      debugPrint('Gemini API HTTP error: $e');
+      _showErrorSnackBar('Failed to fetch AI insights. Please try again.');
       setState(() {
         _aiInsights = [
           'Optimize inventory based on recent trends.',
@@ -464,6 +501,7 @@ Example insights:
       });
     } catch (e) {
       debugPrint('Error fetching AI insights: $e');
+      _showErrorSnackBar('Error fetching AI insights: $e');
       setState(() {
         _aiInsights = [
           'Optimize inventory based on recent trends.',
@@ -475,19 +513,22 @@ Example insights:
     }
   }
 
-  Future<void> _fetchPredictions({String? date}) async {
+  Future<void> _fetchPredictions({String? date, bool forceRefresh = false}) async {
     if (_retryCount >= _maxRetries) {
       setState(() {
         _predictionsError = 'Max retries reached. Using cached or fallback data.';
         _isPredictionsLoading = false;
         _isOffline = true;
+        _predictions = _lastSuccessfulPredictions ?? Constants.defaultPredictions;
       });
+      _fetchAIInsights();
       return;
     }
 
     setState(() {
       _isPredictionsLoading = true;
       _predictionsError = null;
+      _forceRefresh = forceRefresh;
     });
 
     final now = DateTime.now();
@@ -502,7 +543,7 @@ Example insights:
     final cachedDate = prefs.getString('predictions_date_$targetDate');
     final cachedPredictions = prefs.getString('predictions_data_$targetDate');
 
-    if (cachedDate == targetDate && cachedPredictions != null) {
+    if (!_forceRefresh && cachedDate == targetDate && cachedPredictions != null) {
       setState(() {
         _predictions = Map<String, int>.from(jsonDecode(cachedPredictions));
         _isPredictionsLoading = false;
@@ -514,13 +555,17 @@ Example insights:
     }
 
     try {
+      // Check network connectivity before Gemini API call
+      if (!await _checkConnectivity()) {
+        throw SocketException('No internet connection');
+      }
+
       final historicalData = await _fetchHistoricalData();
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         throw Exception('User not authenticated');
       }
 
-      // Prepare prompt data
       final promptData = {
         'today_date': '$todayDate ($todayDay)',
         'historical_food_data': historicalData['historical_food_data'],
@@ -529,11 +574,12 @@ Example insights:
         'yesterday_data': historicalData['yesterday_data'],
         'establishment_type': historicalData['establishment_type'],
         'establishment_address': historicalData['establishment_address'],
+        'request_timestamp': now.toIso8601String(),
       };
 
-      // Construct the prompt
+      // Prompt for Gemini API to generate predictions
       final prompt = '''
-You are an AI assistant for a food establishment on the ReNosh platform. Predict the production quantities for food items today (${promptData['today_date']}), based on historical food tracking, donation data, and trends. Return a JSON object mapping dish names to predicted quantities (integers). Predictions must be accurate, considering ${promptData['today_date']}'s demand (high if weekend), historical patterns, and surplus trends. Use provided dish names or infer relevant dishes (e.g., Gobi, Butter Chicken, Paneer Tikka, Dal Makhani, Naan).
+You are an AI assistant for a food establishment on the ReNosh platform. Predict the production quantities for food items today (${promptData['today_date']}), based on historical food tracking, donation data, and trends. Return a JSON object mapping dish names to predicted quantities (integers). Predictions must be accurate, considering ${promptData['today_date']}'s demand (higher if weekend), recent donation patterns, and surplus trends. Use provided dish names or infer relevant dishes (e.g., Gobi, Butter Chicken, Paneer Tikka, Dal Makhani, Naan). Ensure variability in predictions based on recent trends.
 
 Data:
 - Today's date: ${promptData['today_date']}
@@ -543,6 +589,7 @@ Data:
 - Yesterday's production and sales: ${jsonEncode(promptData['yesterday_data'])}
 - Establishment type: ${promptData['establishment_type']}
 - Location: ${promptData['establishment_address']}
+- Request timestamp: ${promptData['request_timestamp']}
 
 Example output:
 {
@@ -554,8 +601,9 @@ Example output:
 }
 ''';
 
-      const apiKey = 'AIzaSyCVCLMbR7-9F_jI3Byk_0az0nDFOPerPmQ'; // Replace with your actual Gemini API key
-      if (apiKey.isEmpty || apiKey == 'AIzaSyCVCLMbR7-9F_jI3Byk_0az0nDFOPerPmQ') {
+      // Using Gemini API for predictions
+      const apiKey = 'AIzaSyCVCLMbR7-9F_jI3Byk_0az0nDFOPerPmQ'; // TODO: Replace with actual key
+      if (apiKey.isEmpty || apiKey == 'YOUR_VALID_GEMINI_API_KEY') {
         throw Exception('Gemini API key not configured');
       }
 
@@ -574,7 +622,7 @@ Example output:
                 }
               ],
               'generationConfig': {
-                'temperature': 0.7,
+                'temperature': 0.9,
                 'maxOutputTokens': 200,
               },
             }),
@@ -583,14 +631,23 @@ Example output:
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final text = data['candidates'][0]['content']['parts'][0]['text'] as String;
-        final predictions = jsonDecode(text) as Map<String, dynamic>;
+        final text = data['candidates']?[0]['content']['parts'][0]['text'] as String?;
+        debugPrint('Predictions Response: $text');
+        if (text == null || text.isEmpty) {
+          throw Exception('Empty response from Gemini API');
+        }
+
+        Map<String, dynamic> predictions;
+        try {
+          predictions = jsonDecode(text.replaceAll('```json', '').replaceAll('```', '')) as Map<String, dynamic>;
+        } catch (e) {
+          debugPrint('Failed to parse Gemini response: $e, Raw: $text');
+          throw Exception('Failed to parse Gemini response: $e');
+        }
 
         await prefs.setString('predictions_date_$targetDate', targetDate);
-        await prefs.setString(
-            'predictions_data_$targetDate', jsonEncode(predictions));
-        await prefs.setString(
-            'last_successful_predictions', jsonEncode(predictions));
+        await prefs.setString('predictions_data_$targetDate', jsonEncode(predictions));
+        await prefs.setString('last_successful_predictions', jsonEncode(predictions));
 
         setState(() {
           _predictions = predictions.map((key, value) => MapEntry(key, value as int));
@@ -602,7 +659,6 @@ Example output:
         _fetchAIInsights();
 
         if (date == null) {
-          // Fetch yesterday's predictions
           final yesterdayData = await _fetchHistoricalData();
           final yesterdayPromptData = {
             'today_date': dateFormatter.format(now.subtract(Duration(days: 1))) +
@@ -613,10 +669,11 @@ Example output:
             'yesterday_data': yesterdayData['yesterday_data'],
             'establishment_type': yesterdayData['establishment_type'],
             'establishment_address': yesterdayData['establishment_address'],
+            'request_timestamp': now.toIso8601String(),
           };
 
           final yesterdayPrompt = '''
-You are an AI assistant for a food establishment on the ReNosh platform. Predict the production quantities for food items for ${yesterdayPromptData['today_date']}, based on historical food tracking, donation data, and trends. Return a JSON object mapping dish names to predicted quantities (integers). Use provided dish names or infer relevant dishes (e.g., Gobi, Butter Chicken, Paneer Tikka, Dal Makhani, Naan).
+You are an AI assistant for a food establishment on the ReNosh platform. Predict the production quantities for food items for ${yesterdayPromptData['today_date']}, based on historical food tracking, donation data, and trends. Return a JSON object mapping dish names to predicted quantities (integers). Use provided dish names or infer relevant dishes (e.g., Gobi, Butter Chicken, Paneer Tikka, Dal Makhani, Naan). Ensure variability based on recent trends.
 
 Data:
 - Today's date: ${yesterdayPromptData['today_date']}
@@ -626,6 +683,7 @@ Data:
 - Yesterday's production and sales: ${jsonEncode(yesterdayPromptData['yesterday_data'])}
 - Establishment type: ${yesterdayPromptData['establishment_type']}
 - Location: ${yesterdayPromptData['establishment_address']}
+- Request timestamp: ${yesterdayPromptData['request_timestamp']}
 
 Example output:
 {
@@ -650,7 +708,7 @@ Example output:
                     }
                   ],
                   'generationConfig': {
-                    'temperature': 0.7,
+                    'temperature': 0.9,
                     'maxOutputTokens': 200,
                   },
                 }),
@@ -660,21 +718,35 @@ Example output:
           if (yesterdayResponse.statusCode == 200) {
             final yesterdayData = jsonDecode(yesterdayResponse.body);
             final yesterdayText =
-                yesterdayData['candidates'][0]['content']['parts'][0]['text'] as String;
-            final yesterdayPredictions = jsonDecode(yesterdayText) as Map<String, dynamic>;
+                yesterdayData['candidates']?[0]['content']['parts'][0]['text'] as String?;
+            debugPrint('Yesterday Predictions Response: $yesterdayText');
+            if (yesterdayText == null || yesterdayText.isEmpty) {
+              throw Exception('Empty yesterday predictions response');
+            }
+
+            Map<String, dynamic> yesterdayPredictions;
+            try {
+              yesterdayPredictions = jsonDecode(
+                  yesterdayText.replaceAll('```json', '').replaceAll('```', '')) as Map<String, dynamic>;
+            } catch (e) {
+              debugPrint('Failed to parse yesterday predictions: $e, Raw: $yesterdayText');
+              throw Exception('Failed to parse yesterday predictions: $e');
+            }
 
             await prefs.setString('predictions_date_$yesterday', yesterday);
-            await prefs.setString(
-                'predictions_data_$yesterday', jsonEncode(yesterdayPredictions));
+            await prefs.setString('predictions_data_$yesterday', jsonEncode(yesterdayPredictions));
 
             setState(() {
               _yesterdayPredictions =
                   yesterdayPredictions.map((key, value) => MapEntry(key, value as int));
             });
             _fetchAIInsights();
+          } else {
+            debugPrint('Yesterday API error: Status ${yesterdayResponse.statusCode}, Body: ${yesterdayResponse.body}');
+            throw HttpException(
+                'Yesterday API returned status code ${yesterdayResponse.statusCode}: ${yesterdayResponse.body}');
           }
 
-          // Preload next day's predictions
           final nextDay = now.add(Duration(days: 1)).toIso8601String().split('T')[0];
           final lastPreload = prefs.getString('last_preload_time');
           if (lastPreload == null ||
@@ -688,10 +760,11 @@ Example output:
               'yesterday_data': historicalData['yesterday_data'],
               'establishment_type': historicalData['establishment_type'],
               'establishment_address': historicalData['establishment_address'],
+              'request_timestamp': now.toIso8601String(),
             };
 
             final nextDayPrompt = '''
-You are an AI assistant for a food establishment on the ReNosh platform. Predict the production quantities for food items for ${nextDayPromptData['today_date']}, based on historical food tracking, donation data, and trends. Return a JSON object mapping dish names to predicted quantities (integers). Use provided dish names or infer relevant dishes (e.g., Gobi, Butter Chicken, Paneer Tikka, Dal Makhani, Naan).
+You are an AI assistant for a food establishment on the ReNosh platform. Predict the production quantities for food items for ${nextDayPromptData['today_date']}, based on historical food tracking, donation data, and trends. Return a JSON object mapping dish names to predicted quantities (integers). Use provided dish names or infer relevant dishes (e.g., Gobi, Butter Chicken, Paneer Tikka, Dal Makhani, Naan). Ensure variability based on recent trends.
 
 Data:
 - Today's date: ${nextDayPromptData['today_date']}
@@ -701,6 +774,7 @@ Data:
 - Yesterday's production and sales: ${jsonEncode(nextDayPromptData['yesterday_data'])}
 - Establishment type: ${nextDayPromptData['establishment_type']}
 - Location: ${nextDayPromptData['establishment_address']}
+- Request timestamp: ${nextDayPromptData['request_timestamp']}
 
 Example output:
 {
@@ -725,7 +799,7 @@ Example output:
                       }
                     ],
                     'generationConfig': {
-                      'temperature': 0.7,
+                      'temperature': 0.9,
                       'maxOutputTokens': 200,
                     },
                   }),
@@ -734,28 +808,33 @@ Example output:
               if (response.statusCode == 200) {
                 final data = jsonDecode(response.body);
                 final text =
-                    data['candidates'][0]['content']['parts'][0]['text'] as String;
-                final nextDayPredictions = jsonDecode(text) as Map<String, dynamic>;
-                prefs.setString('predictions_date_$nextDay', nextDay);
-                prefs.setString(
-                    'predictions_data_$nextDay', jsonEncode(nextDayPredictions));
-                prefs.setString('last_preload_time', now.toIso8601String());
-                debugPrint('Preloaded predictions for $nextDay');
+                    data['candidates']?[0]['content']['parts'][0]['text'] as String?;
+                debugPrint('Next Day Predictions Response: $text');
+                if (text != null && text.isNotEmpty) {
+                  final nextDayPredictions = jsonDecode(
+                      text.replaceAll('```json', '').replaceAll('```', '')) as Map<String, dynamic>;
+                  prefs.setString('predictions_date_$nextDay', nextDay);
+                  prefs.setString('predictions_data_$nextDay', jsonEncode(nextDayPredictions));
+                  prefs.setString('last_preload_time', now.toIso8601String());
+                  debugPrint('Preloaded predictions for $nextDay');
+                }
               }
             });
           }
         }
       } else {
+        debugPrint('Gemini API error: Status ${response.statusCode}, Body: ${response.body}');
         throw HttpException(
             'Gemini API returned status code ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
       debugPrint('Error fetching predictions: $e');
+      _showErrorSnackBar('Failed to fetch predictions: $e');
       setState(() {
         _predictions = _lastSuccessfulPredictions ?? Constants.defaultPredictions;
         _predictionsError = 'Failed to fetch predictions: $e';
         _isPredictionsLoading = false;
-        _isOffline = true;
+        _isOffline = e is SocketException;
         _retryCount++;
       });
       _fetchAIInsights();
@@ -885,8 +964,11 @@ Example output:
                               ),
                               onPressed: _isPredictionsLoading
                                   ? null
-                                  : () {
-                                      _fetchPredictions();
+                                  : () async {
+                                      final now = DateTime.now();
+                                      final targetDate = now.toIso8601String().split('T')[0];
+                                      await _clearCacheForDate(targetDate);
+                                      _fetchPredictions(forceRefresh: true);
                                     },
                             ),
                             IconButton(
