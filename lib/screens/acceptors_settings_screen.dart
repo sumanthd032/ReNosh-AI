@@ -344,7 +344,7 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Set the maximum distance for viewing sellers (1–500 km)',
+                      'Set the maximum distance for viewing sellers (1–5000 km)',
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
@@ -375,7 +375,7 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                       child: Slider(
                         value: _maxDistanceKm,
                         min: 1,
-                        max: 500,
+                        max: 5000,
                         divisions: 999,
                         label: '${_maxDistanceKm.round()} km',
                         onChanged: (value) {

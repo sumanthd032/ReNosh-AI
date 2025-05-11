@@ -21,7 +21,7 @@ double calculateDistance(LatLng point1, LatLng point2) {
   double c = 2 * atan2(sqrt(a), sqrt(1 - a));
   double distance = earthRadius * c; // Distance in km
   debugPrint(
-    'Haversine: lat1=$lat1, lat2=$lat2, deltaLat=$deltaLat, deltaLon=$deltaLon, a=$a, c=$c, distance=$distance km',
+    'Haversine: Input: point1=$point1, point2=$point2, distance=$distance km',
   );
   return distance;
 }
@@ -491,25 +491,36 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                                   return {'doc': doc, 'distance': distance};
                                 }
                                 final donorData = donorDoc.data()!;
-                                if (!donorData.containsKey('location')) {
+                                // Check for both 'location' and 'Location'
+                                Map<String, dynamic>? locationData;
+                                if (donorData.containsKey('location')) {
+                                  locationData =
+                                      donorData['location']
+                                          as Map<String, dynamic>?;
+                                } else if (donorData.containsKey('Location')) {
+                                  locationData =
+                                      donorData['Location']
+                                          as Map<String, dynamic>?;
+                                }
+                                if (locationData == null) {
                                   debugPrint(
                                     'No location field in donor document: $establishmentId, data: $donorData',
                                   );
                                   return {'doc': doc, 'distance': distance};
                                 }
-                                final locationData =
-                                    donorData['location']
-                                        as Map<String, dynamic>?;
-                                if (locationData == null ||
-                                    !locationData.containsKey('latitude') ||
-                                    !locationData.containsKey('longitude')) {
+                                // Handle both lowercase and uppercase latitude/longitude
+                                num? latitude =
+                                    locationData['latitude'] ??
+                                    locationData['Latitude'];
+                                num? longitude =
+                                    locationData['longitude'] ??
+                                    locationData['Longitude'];
+                                if (latitude == null || longitude == null) {
                                   debugPrint(
-                                    'Invalid location format for donor: $establishmentId, location: $locationData',
+                                    'Missing latitude/longitude for donor: $establishmentId, location: $locationData',
                                   );
                                   return {'doc': doc, 'distance': distance};
                                 }
-                                final latitude = locationData['latitude'];
-                                final longitude = locationData['longitude'];
                                 if (latitude is! num || longitude is! num) {
                                   debugPrint(
                                     'Non-numeric coordinates for donor: $establishmentId, latitude: $latitude, longitude: $longitude',
