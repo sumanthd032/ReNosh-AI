@@ -106,7 +106,9 @@ class AcceptorHistory extends StatelessWidget {
                             );
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => AcceptorSettingsScreen(),
+                                builder:
+                                    (context) =>
+                                        DonorLocationScreen(address: address),
                               ),
                             );
                           },
