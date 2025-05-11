@@ -180,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen>
                       ScaleTransition(
                         scale: _scaleAnimation,
                         child: Image.asset(
-                          'assets/logo.jpg',
+                          'assets/logo.png',
                           width: 160,
                           height: 160,
                           semanticLabel: 'ReNosh Logo',

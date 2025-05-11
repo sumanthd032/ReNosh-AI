@@ -291,7 +291,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                       ScaleTransition(
                         scale: _scaleAnimation,
                         child: Image.asset(
-                          'assets/logo.jpg',
+                          'assets/logo.png',
                           width: 160,
                           height: 160,
                           semanticLabel: 'ReNosh Logo',
