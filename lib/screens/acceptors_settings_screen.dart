@@ -38,7 +38,10 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
       if (doc.exists) {
         final data = doc.data()!;
         setState(() {
-          _maxDistanceKm = (data['maxDistanceKm'] as num?)?.toDouble() ?? 50;
+          // Clamp maxDistanceKm to the valid range [1.0, 150.0]
+          final loadedDistance =
+              (data['maxDistanceKm'] as num?)?.toDouble() ?? 50;
+          _maxDistanceKm = loadedDistance.clamp(1.0, 150.0);
           if (data.containsKey('location')) {
             _selectedLocation = LatLng(
               (data['location']['latitude'] as num).toDouble(),
@@ -376,7 +379,7 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                         value: _maxDistanceKm,
                         min: 1,
                         max: 150,
-                        divisions: 999,
+                        divisions: 149, // Adjusted to match min/max range
                         label: '${_maxDistanceKm.round()} km',
                         onChanged: (value) {
                           setState(() {
