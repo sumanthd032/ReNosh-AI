@@ -19,7 +19,11 @@ double calculateDistance(LatLng point1, LatLng point2) {
       sin(deltaLat / 2) * sin(deltaLat / 2) +
       cos(lat1) * cos(lat2) * sin(deltaLon / 2) * sin(deltaLon / 2);
   double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-  return earthRadius * c; // Distance in km
+  double distance = earthRadius * c; // Distance in km
+  debugPrint(
+    'Haversine: lat1=$lat1, lat2=$lat2, deltaLat=$deltaLat, deltaLon=$deltaLon, a=$a, c=$c, distance=$distance km',
+  );
+  return distance;
 }
 
 class AcceptorDashboard extends StatefulWidget {
@@ -357,7 +361,7 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                           1000.0;
 
                       debugPrint(
-                        'Acceptor location: $acceptorLocation, maxDistanceKm: $maxDistanceKm',
+                        'Acceptor location: $acceptorLocation (lat: ${acceptorLocation?.latitude}, lng: ${acceptorLocation?.longitude}), maxDistanceKm: $maxDistanceKm',
                       );
 
                       if (acceptorLocation == null ||
@@ -528,8 +532,13 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                                   donorLocation,
                                 );
                                 debugPrint(
-                                  'Donation ${doc.id}: Donor $establishmentId at $donorLocation, distance: $distance km',
+                                  'Donation ${doc.id}: Donor $establishmentId at $donorLocation (lat: ${donorLocation.latitude}, lng: ${donorLocation.longitude}), distance: $distance km',
                                 );
+                                if (distance < 0) {
+                                  debugPrint(
+                                    'Negative distance detected for donation ${doc.id}: $distance km',
+                                  );
+                                }
                                 return {'doc': doc, 'distance': distance};
                               }),
                             ),
@@ -579,12 +588,24 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                                             item['distance'] <= maxDistanceKm,
                                       )
                                       .toList();
+                              final invalidDistances =
+                                  donationItems
+                                      .where(
+                                        (item) => !item['distance'].isFinite,
+                                      )
+                                      .length;
 
                               debugPrint(
                                 'Filtered ${filteredDonations.length} donations within $maxDistanceKm km',
                               );
+                              debugPrint(
+                                'Excluded $invalidDistances donations with invalid distances',
+                              );
 
                               if (filteredDonations.isEmpty) {
+                                debugPrint(
+                                  'No donations within range; maxDistanceKm: $maxDistanceKm',
+                                );
                                 return Column(
                                   children: [
                                     _buildAvailableDonationsCard(0),
@@ -632,6 +653,9 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                                           data['pickupTime'] as String;
                                       final distance =
                                           item['distance'] as double;
+                                      debugPrint(
+                                        'Displaying donation ${doc.id}: Distance=${distance.toStringAsFixed(1)} km',
+                                      );
                                       return Container(
                                         margin: const EdgeInsets.only(
                                           bottom: 16,

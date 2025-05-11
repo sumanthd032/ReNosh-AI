@@ -14,7 +14,7 @@ class AcceptorSettingsScreen extends StatefulWidget {
 
 class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
   double _maxDistanceKm = 50;
-  TextEditingController _addressController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
   LatLng? _selectedLocation;
   bool _isLoading = false;
   String _errorMessage = '';
@@ -44,7 +44,6 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
               (data['location']['latitude'] as num).toDouble(),
               (data['location']['longitude'] as num).toDouble(),
             );
-            // Optionally, reverse geocode to display address
             _getAddressFromLatLng(_selectedLocation!);
           }
         });
@@ -149,11 +148,19 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
         SnackBar(
           content: Text(
             'Settings saved successfully!',
-            style: GoogleFonts.inter(color: const Color(0xFFF9F7F3)),
+            style: GoogleFonts.inter(
+              color: Colors.black,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           backgroundColor: const Color(0xFF39FF14),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ),
       );
+      Navigator.of(context).pop();
     } catch (e) {
       setState(() {
         _errorMessage = 'Error saving settings: $e';
@@ -215,7 +222,7 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                         Text(
                           'Settings',
                           style: GoogleFonts.inter(
-                            fontSize: 24,
+                            fontSize: 26,
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFFF9F7F3),
                           ),
@@ -236,25 +243,49 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                       'Enter your address to set your location',
                       style: GoogleFonts.inter(
                         fontSize: 14,
+                        fontWeight: FontWeight.w400,
                         color: const Color(0xFFB0B0B0),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    TextField(
-                      controller: _addressController,
-                      decoration: InputDecoration(
-                        labelText: 'Address',
-                        labelStyle: GoogleFonts.inter(
-                          color: const Color(0xFFB0B0B0),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2D2D2D),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _addressController,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: const Color(0xFFF9F7F3),
                         ),
-                        filled: true,
-                        fillColor: const Color(0xFF2D2D2D),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                        decoration: InputDecoration(
+                          hintText: 'Enter your address',
+                          hintStyle: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: const Color(0xFFB0B0B0),
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.location_on,
+                            color: Color(0xFF39FF14),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                         ),
                       ),
-                      style: GoogleFonts.inter(color: const Color(0xFFF9F7F3)),
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -264,15 +295,22 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF39FF14),
                           foregroundColor: const Color(0xFF1A3C34),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 2,
+                          shadowColor: Colors.black.withOpacity(0.2),
                         ),
                         child:
                             _isLoading
-                                ? const CircularProgressIndicator(
-                                  color: Color(0xFF1A3C34),
+                                ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFF1A3C34),
+                                    strokeWidth: 2,
+                                  ),
                                 )
                                 : Text(
                                   'Set Location',
@@ -283,6 +321,18 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                                 ),
                       ),
                     ),
+                    if (_selectedLocation != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        'Lat: ${_selectedLocation!.latitude.toStringAsFixed(6)}, '
+                        'Lng: ${_selectedLocation!.longitude.toStringAsFixed(6)}',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFFB0B0B0),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     Text(
                       'Maximum Distance Range',
@@ -297,44 +347,71 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                       'Set the maximum distance for viewing sellers (1–1000 km)',
                       style: GoogleFonts.inter(
                         fontSize: 14,
+                        fontWeight: FontWeight.w400,
                         color: const Color(0xFFB0B0B0),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Slider(
-                      value: _maxDistanceKm,
-                      min: 1,
-                      max: 1000,
-                      divisions: 99,
-                      label: '${_maxDistanceKm.round()} km',
-                      activeColor: const Color(0xFF39FF14),
-                      inactiveColor: const Color(0xFFB0B0B0),
-                      onChanged: (value) {
-                        setState(() {
-                          _maxDistanceKm = value;
-                        });
-                        debugPrint('Distance slider changed to: $value km');
-                      },
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 4,
+                        thumbColor: const Color(0xFF39FF14),
+                        activeTrackColor: const Color(0xFF39FF14),
+                        inactiveTrackColor: const Color(
+                          0xFFB0B0B0,
+                        ).withOpacity(0.3),
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 8,
+                        ),
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 16,
+                        ),
+                        valueIndicatorColor: const Color(0xFF39FF14),
+                        valueIndicatorTextStyle: GoogleFonts.inter(
+                          color: const Color(0xFF1A3C34),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      child: Slider(
+                        value: _maxDistanceKm,
+                        min: 1,
+                        max: 1000,
+                        divisions: 999,
+                        label: '${_maxDistanceKm.round()} km',
+                        onChanged: (value) {
+                          setState(() {
+                            _maxDistanceKm = value;
+                          });
+                          debugPrint('Distance slider changed to: $value km');
+                        },
+                      ),
                     ),
                     Text(
                       'Current range: ${_maxDistanceKm.round()} km',
                       style: GoogleFonts.inter(
-                        fontSize: 16,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                         color: const Color(0xFFF9F7F3),
                       ),
                     ),
                     const SizedBox(height: 24),
                     if (_errorMessage.isNotEmpty)
                       Container(
+                        width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF4A4A).withOpacity(0.9),
+                          color: const Color(0xFFFF4A4A).withOpacity(0.15),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFFFF4A4A),
+                            width: 1,
+                          ),
                         ),
                         child: Text(
                           _errorMessage,
                           style: GoogleFonts.inter(
                             fontSize: 14,
+                            fontWeight: FontWeight.w400,
                             color: const Color(0xFFF9F7F3),
                           ),
                         ),
@@ -347,15 +424,22 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF39FF14),
                           foregroundColor: const Color(0xFF1A3C34),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 2,
+                          shadowColor: Colors.black.withOpacity(0.2),
                         ),
                         child:
                             _isLoading
-                                ? const CircularProgressIndicator(
-                                  color: Color(0xFF1A3C34),
+                                ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFF1A3C34),
+                                    strokeWidth: 2,
+                                  ),
                                 )
                                 : Text(
                                   'Save Settings',
