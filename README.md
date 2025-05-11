@@ -1,3 +1,4 @@
+
 # ReNosh App
 
 ## Overview
@@ -99,9 +100,68 @@ Ensure you have the following installed/configured:
 ```bash
 git clone https://github.com/yourusername/renosh-app.git
 cd renosh-app
+```
 
 ### 2. Install Dependencies
+
+Run the following command to install the required Flutter packages:
 
 ```bash
 flutter pub get
 ```
+
+### 3. Set Up Firebase
+
+- Create a Firebase project at [Firebase Console](https://console.firebase.google.com/).
+- Add Android/iOS apps to your Firebase project.
+- Download and place:
+  - `google-services.json` into `android/app/`
+  - `GoogleService-Info.plist` into `ios/Runner/`
+- Enable Firebase Authentication (Email/Password) and Firestore.
+
+
+### 4. Run the App
+
+```bash
+flutter run
+```
+
+---
+
+## Contributing
+
+1. Fork the repository.
+2. Create a new branch:
+```bash
+git checkout -b feature/your-feature
+```
+3. Commit your changes:
+```bash
+git commit -m "Add your feature"
+```
+4. Push your branch:
+```bash
+git push origin feature/your-feature
+```
+5. Open a Pull Request.
+
+---
+
+## Known Issues
+
+- **Gemini API Integration**: Currently uses simulated data for AI insights. Replace with real API calls in `_fetchAIInsights`.
+- **Offline Mode**: May show stale data if offline too long.
+- **Image Asset**: Ensure `assets/logo.jpg` exists or update the path in `establishment_dashboard.dart`.
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## Contact
+
+For support or inquiries, contact us at:  
+📧 **sumanthd032@gmail.com**
