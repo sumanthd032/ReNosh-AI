@@ -7,6 +7,7 @@ import 'package:renosh_app/screens/main_screen_establishment.dart';
 import 'package:renosh_app/screens/main_screen_acceptor.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +18,9 @@ void main() async {
     debugPrint('Firebase initialized successfully');
   } catch (e) {
     debugPrint('Firebase initialization failed: $e');
+    if (kIsWeb) {
+      debugPrint('Ensure Firebase is configured correctly in web/index.html');
+    }
   }
   runApp(const MyApp());
 }
@@ -31,11 +35,10 @@ class MyApp extends StatelessWidget {
     }
 
     return StreamBuilder<DocumentSnapshot>(
-      stream:
-          FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           debugPrint('Waiting for user document for UID: ${user.uid}');

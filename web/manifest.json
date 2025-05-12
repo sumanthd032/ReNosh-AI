@@ -1,11 +1,11 @@
 {
-    "name": "renosh_app",
-    "short_name": "renosh_app",
+    "name": "ReNosh",
+    "short_name": "ReNosh",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "AI powered food waste management app",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

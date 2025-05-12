@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -791,6 +792,7 @@ Example output:
 
       final url = Uri.parse(
           'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey');
+      debugPrint('Fetching predictions from Gemini API: $url');
       final response = await http
           .post(
             url,
@@ -883,6 +885,7 @@ Example output:
 }
 ''';
 
+          debugPrint('Fetching yesterday predictions from Gemini API: $url');
           final yesterdayResponse = await http
               .post(
                 url,
@@ -978,6 +981,7 @@ Example output:
 }
 ''';
 
+            debugPrint('Preloading next day predictions: $nextDay');
             http
                 .post(
                   url,
@@ -1011,7 +1015,12 @@ Example output:
                   prefs.setString('last_preload_time', now.toIso8601String());
                   debugPrint('Preloaded predictions for $nextDay');
                 }
+              } else {
+                debugPrint(
+                    'Next Day API error: Status ${response.statusCode}, Body: ${response.body}');
               }
+            }).catchError((e) {
+              debugPrint('Error preloading next day predictions: $e');
             });
           }
         }
@@ -1076,6 +1085,7 @@ Example output:
   }
 
   void _showPredictionsDialog() {
+    debugPrint('Showing predictions dialog');
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1160,6 +1170,7 @@ Example output:
                               onPressed: _isPredictionsLoading
                                   ? null
                                   : () async {
+                                      debugPrint('Refresh predictions clicked');
                                       final now = DateTime.now();
                                       final targetDate =
                                           now.toIso8601String().split('T')[0];
@@ -1173,7 +1184,10 @@ Example output:
                                 color: Constants.textColor,
                                 size: 24,
                               ),
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: () {
+                                debugPrint('Closing predictions dialog');
+                                Navigator.pop(context);
+                              },
                             ),
                           ],
                         ),
@@ -1434,15 +1448,19 @@ Example output:
           ],
         ),
       ),
-    );
+    ).catchError((e) {
+      debugPrint('Error showing predictions dialog: $e');
+      _showErrorSnackBar('Failed to show predictions dialog: $e');
+    });
   }
 
   Widget _buildAIInsightsCard() {
     return GestureDetector(
       onTap: () {
-        if (Platform.isAndroid || Platform.isIOS) {
+        if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
           HapticFeedback.lightImpact();
         }
+        debugPrint('AI Insights card tapped');
         _showSuccessSnackBar('AI Insights refreshed!');
         _fetchAIInsights();
       },
@@ -1982,21 +2000,22 @@ Example output:
 
                   return InkWell(
                     onTap: () {
-  try {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SurplusDetailsScreen(
-          itemName: item,
-          quantity: quantity,
-          docId: doc.id,
-        ),
-      ),
-    );
-  } catch (e) {
-    debugPrint('Navigation exception: $e');
-    _showErrorSnackBar('Error navigating to surplus details: $e');
-  }
+                      try {
+                        debugPrint('Navigating to SurplusDetailsScreen for item: $item');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SurplusDetailsScreen(
+                              itemName: item,
+                              quantity: quantity,
+                              docId: doc.id,
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        debugPrint('Navigation exception: $e');
+                        _showErrorSnackBar('Error navigating to surplus details: $e');
+                      }
                     },
                     splashColor: Constants.primaryColor.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(14),
@@ -2035,7 +2054,7 @@ Example output:
                             child: Icon(
                               Icons.restaurant_menu,
                               color: Constants.primaryColor,
-// Removed the invalid key parameter
+                              size: 24,
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -2089,15 +2108,43 @@ Example output:
       ),
       child: Row(
         children: [
-          Icon(Icons.cloud_off, color: Constants.errorColor, size: 20),
-          const SizedBox(width: 8),
+          Icon(
+            Icons.cloud_off,
+            color: Constants.errorColor,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Offline mode: Using cached data. Please check your connection.',
+              'You are offline. Using cached data.',
               style: GoogleFonts.inter(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: Constants.textColor,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              debugPrint('Retry connection clicked');
+              if (await _checkConnectivity()) {
+                setState(() {
+                  _isOffline = false;
+                  _retryCount = 0;
+                });
+                _fetchPredictions(forceRefresh: true);
+                _fetchAIInsights();
+                _fetchSustainabilityData();
+              } else {
+                _showErrorSnackBar('Still offline. Please check your connection.');
+              }
+            },
+            child: Text(
+              'Retry',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Constants.primaryColor,
               ),
             ),
           ),
@@ -2108,175 +2155,111 @@ Example output:
 
   @override
   Widget build(BuildContext context) {
-    String? topPrediction;
-    int? topQuantity;
-    if (_predictions != null && _predictions!.isNotEmpty) {
-      final sortedPredictions = _predictions!.entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
-      topPrediction = sortedPredictions.first.key;
-      topQuantity = sortedPredictions.first.value;
-    }
-
     return Scaffold(
       backgroundColor: Constants.backgroundColor,
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.center,
-                radius: 1.5,
-                colors: [
-                  Constants.backgroundColor.withOpacity(0.95),
-                  const Color(0xFF2D2D2D).withOpacity(0.85),
+      body: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                color: Constants.primaryColor,
+                strokeWidth: 2.5,
+              ),
+            )
+          : SafeArea(
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: FadeTransition(
+                                  opacity: _fadeAnimation,
+                                  child: ScaleTransition(
+                                    scale: _scaleAnimation,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _greeting,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w400,
+                                            color: Constants.secondaryTextColor,
+                                          ),
+                                        ),
+                                        Text(
+                                          _establishmentName ?? 'Restaurant',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w700,
+                                            color: Constants.textColor,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              MouseRegion(
+                                cursor: SystemMouseCursors.click,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    debugPrint('Today\'s Predictions button tapped');
+                                    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+                                      HapticFeedback.lightImpact();
+                                    }
+                                    _showPredictionsDialog();
+                                  },
+                                  child: AnimatedBuilder(
+                                    animation: _glowController,
+                                    builder: (context, child) {
+                                      return Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Constants.primaryColor
+                                              .withOpacity(_glowAnimation.value),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Constants.primaryColor
+                                                  .withOpacity(0.4),
+                                              blurRadius: 8,
+                                              spreadRadius: 1,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Icon(
+                                          Icons.insights,
+                                          color: Constants.textColor,
+                                          size: 28,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        _buildOfflineBanner(),
+                        _buildAIInsightsCard(),
+                        _buildSustainabilityCharts(),
+                        _buildSurplusItems(),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-          _isLoading
-              ? Center(
-                  child: CircularProgressIndicator(color: Constants.primaryColor),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 32,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildOfflineBanner(),
-                      const SizedBox(height: 32.0),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          ScaleTransition(
-                            scale: _scaleAnimation,
-                            child:
-                                                        Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                FadeTransition(
-                                  opacity: _fadeAnimation,
-                                  child: Text(
-                                    '$_greeting, ${_establishmentName ?? 'User'}!',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w800,
-                                      color: Constants.textColor,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Let’s optimize your kitchen today.',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w400,
-                                    color: Constants.secondaryTextColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            child: GestureDetector(
-                              onTap: () {
-                                if (Platform.isAndroid || Platform.isIOS) {
-                                  HapticFeedback.lightImpact();
-                                }
-                                _showPredictionsDialog();
-                              },
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Constants.primaryColor.withOpacity(0.3),
-                                      Constants.backgroundColor.withOpacity(0.5),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Constants.primaryColor
-                                          .withOpacity(_glowAnimation.value),
-                                      blurRadius: 12,
-                                      spreadRadius: 2,
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  Icons.insights,
-                                  color: Constants.primaryColor,
-                                  size: 28,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      if (topPrediction != null && topQuantity != null)
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color(0xFF2D2D2D),
-                                  Constants.backgroundColor.withOpacity(0.9),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 8,
-                                  offset: const Offset(4, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.star,
-                                  color: Constants.primaryColor,
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Top Prediction: $topQuantity $topPrediction today',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Constants.textColor,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 24),
-                      _buildAIInsightsCard(),
-                      const SizedBox(height: 24),
-                      _buildSustainabilityCharts(),
-                      const SizedBox(height: 24),
-                      _buildSurplusItems(),
-                    ],
-                  ),
-                ),
-        ],
-      ),
     );
   }
 }

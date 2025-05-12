@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/foundation.dart' show kIsWeb; // Import kIsWeb
 import 'dart:io' show Platform;
 
 class BottomNavBarAcceptor extends StatelessWidget {
@@ -71,7 +72,8 @@ class BottomNavBarAcceptor extends StatelessWidget {
       child: GestureDetector(
         key: Key('nav_$title'),
         onTap: () {
-          if (Platform.isAndroid || Platform.isIOS) {
+          // Only trigger haptic feedback on mobile platforms
+          if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
             HapticFeedback.lightImpact();
           }
           onTap();
